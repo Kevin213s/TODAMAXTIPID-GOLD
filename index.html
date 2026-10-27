@@ -223,6 +223,9 @@
             <button onclick="switchTab('receipts')" id="tab-btn-receipts" class="tab-btn admin-only px-4 py-3 text-emerald-200 hover:text-white border-b-2 border-transparent flex items-center gap-2 hover:bg-emerald-800 transition">
                 <i class="fa-solid fa-receipt text-sm"></i> Receipt History
             </button>
+            <button onclick="switchTab('discord')" id="tab-btn-discord" class="tab-btn admin-only px-4 py-3 text-emerald-200 hover:text-white border-b-2 border-transparent flex items-center gap-2 hover:bg-emerald-800 transition">
+                <i class="fa-brands fa-discord text-sm"></i> Discord Integration Settings
+            </button>
         </nav>
     </header>
 
@@ -1154,6 +1157,167 @@
             </div>
         </section>
 
+        <!-- TAB: DISCORD INTEGRATION SETTINGS -->
+        <section id="tab-discord" class="tab-content admin-only hidden h-full p-4 overflow-y-auto">
+            <div class="max-w-5xl mx-auto space-y-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-3">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl shadow-sm"><i class="fa-brands fa-discord"></i></div>
+                        <div>
+                            <h2 class="text-base font-black text-slate-800 uppercase tracking-wide">Discord Integration Settings</h2>
+                            <p class="text-xs text-slate-500 font-medium mt-0.5">Send checkout, low-stock and cashier shift logs to a Discord channel as formatted embeds.</p>
+                        </div>
+                    </div>
+                    <span id="discord-status-badge" class="text-[11px] font-bold px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">Not configured</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <form onsubmit="saveDiscordSettings(event)" class="md:col-span-3 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4 text-xs">
+                        <h3 class="font-bold text-xs uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-plug text-puregold-green"></i> Connection
+                        </h3>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1 uppercase tracking-wider text-[10px]">Discord Webhook URL</label>
+                            <div class="flex gap-2">
+                                <input type="password" id="discord-webhook-url" autocomplete="off" spellcheck="false" class="flex-1 p-2.5 bg-slate-50 border border-slate-300 text-slate-800 rounded-xl font-mono text-[11px] focus:outline-none focus:ring-2 focus:ring-puregold-green" placeholder="https://discord.com/api/webhooks/123.../abc...">
+                                <button type="button" onclick="toggleDiscordSecret('discord-webhook-url', this)" class="px-3 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl text-slate-600" title="Show / hide"><i class="fa-solid fa-eye"></i></button>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-1">Channel Settings → Integrations → Webhooks → Copy Webhook URL.</p>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1 uppercase tracking-wider text-[10px]">Bot Token (optional)</label>
+                                <div class="flex gap-2">
+                                    <input type="password" id="discord-bot-token" autocomplete="off" spellcheck="false" class="flex-1 min-w-0 p-2.5 bg-slate-50 border border-slate-300 text-slate-800 rounded-xl font-mono text-[11px] focus:outline-none focus:ring-2 focus:ring-puregold-green" placeholder="Bot token">
+                                    <button type="button" onclick="toggleDiscordSecret('discord-bot-token', this)" class="px-3 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl text-slate-600" title="Show / hide"><i class="fa-solid fa-eye"></i></button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1 uppercase tracking-wider text-[10px]">Channel ID (for bot)</label>
+                                <input type="text" id="discord-channel-id" autocomplete="off" class="w-full p-2.5 bg-slate-50 border border-slate-300 text-slate-800 rounded-xl font-mono text-[11px] focus:outline-none focus:ring-2 focus:ring-puregold-green" placeholder="e.g. 112233445566778899">
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-500 bg-amber-50 border border-amber-200 rounded-xl p-2.5 leading-relaxed">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-600 mr-1"></i>
+                            Webhook is used first. If it is empty, the bot token + channel ID are used to post instead. Values are stored only in this browser's localStorage (lightly obfuscated, not encrypted), so anyone with access to this browser profile can read them. Use a webhook/bot limited to a private log channel, and regenerate it if it is ever exposed.
+                        </p>
+
+                        <h3 class="font-bold text-xs uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-3 pt-1 flex items-center gap-2">
+                            <i class="fa-solid fa-bell text-puregold-green"></i> Notifications
+                        </h3>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer"><input type="checkbox" id="discord-evt-checkout" class="rounded text-puregold-green"> <span class="font-semibold text-slate-700">Completed POS checkout transactions</span></label>
+                            <label class="flex items-center gap-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer"><input type="checkbox" id="discord-evt-lowstock" class="rounded text-puregold-green"> <span class="font-semibold text-slate-700">Low stock alerts</span></label>
+                            <label class="flex items-center gap-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer"><input type="checkbox" id="discord-evt-shift" class="rounded text-puregold-green"> <span class="font-semibold text-slate-700">Cashier login / logout (shift)</span></label>
+                            <label class="flex items-center gap-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer"><input type="checkbox" id="discord-evt-changes" class="rounded text-puregold-green"> <span class="font-semibold text-slate-700">Data changes (products, restocks, staff, Perks members)</span></label>
+                            <label class="flex items-center gap-2.5 p-2.5 bg-indigo-50 border border-indigo-200 rounded-xl cursor-pointer"><input type="checkbox" id="discord-auto-backup" class="rounded text-puregold-green"> <span class="font-semibold text-slate-700">Auto-backup ALL data to Discord (about 2 min after the last change)</span></label>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1 uppercase tracking-wider text-[10px]">Critical Low Stock Threshold (units)</label>
+                            <input type="number" id="discord-low-threshold" min="1" class="w-32 p-2.5 bg-slate-50 border border-slate-300 text-slate-800 rounded-xl font-mono font-bold focus:outline-none focus:ring-2 focus:ring-puregold-green" value="15">
+                            <p class="text-[10px] text-slate-400 mt-1">An alert is sent when an item's stock drops below this number.</p>
+                        </div>
+
+                        <div class="p-3 bg-indigo-50 border border-indigo-200 rounded-xl space-y-2">
+                            <p class="font-bold text-[10px] uppercase tracking-wider text-indigo-800"><i class="fa-solid fa-server mr-1"></i> Separate Servers / Channels per Event (optional)</p>
+                            <p class="text-[10px] text-slate-500 leading-relaxed">Paste a webhook from any server or channel to send that event type there. Leave blank to use the default webhook above. The Database Channel and the Default Channel ID can also be in other servers, as long as the bot has been added to each server.</p>
+                            <input type="password" id="discord-route-checkout" autocomplete="off" class="w-full p-2 bg-white border border-slate-300 rounded-lg font-mono text-[10px]" placeholder="Checkout transactions → webhook URL">
+                            <input type="password" id="discord-route-lowstock" autocomplete="off" class="w-full p-2 bg-white border border-slate-300 rounded-lg font-mono text-[10px]" placeholder="Low stock alerts → webhook URL">
+                            <input type="password" id="discord-route-shift" autocomplete="off" class="w-full p-2 bg-white border border-slate-300 rounded-lg font-mono text-[10px]" placeholder="Cashier login / logout → webhook URL">
+                            <input type="password" id="discord-route-changes" autocomplete="off" class="w-full p-2 bg-white border border-slate-300 rounded-lg font-mono text-[10px]" placeholder="Data changes (products, staff, members) → webhook URL">
+                            <input type="password" id="discord-route-backup" autocomplete="off" class="w-full p-2 bg-white border border-slate-300 rounded-lg font-mono text-[10px]" placeholder="Full backups (files) → webhook URL">
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-200 flex flex-wrap gap-2">
+                            <button type="submit" class="px-4 py-2.5 bg-gradient-to-r from-puregold-yellow to-amber-500 text-puregold-darkgreen font-extrabold rounded-xl shadow-sm flex items-center gap-2"><i class="fa-solid fa-floppy-disk"></i> Save Settings</button>
+                            <button type="button" onclick="testDiscordNotification()" id="discord-test-btn" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-2"><i class="fa-brands fa-discord"></i> Test Discord Notification</button>
+                            <button type="button" onclick="verifyDiscordBot()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold rounded-xl flex items-center gap-2"><i class="fa-solid fa-robot"></i> Verify Bot Token</button>
+                            <button type="button" onclick="clearDiscordSettings()" class="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold rounded-xl flex items-center gap-2"><i class="fa-solid fa-trash-can"></i> Clear Saved</button>
+                        </div>
+                    </form>
+
+                    <div class="md:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3 flex flex-col">
+                        <h3 class="font-bold text-xs uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-3 flex items-center justify-between">
+                            <span class="flex items-center gap-2"><i class="fa-solid fa-list-check text-puregold-green"></i> Delivery Log</span>
+                            <button type="button" onclick="discordLog = []; renderDiscordLog();" class="text-[10px] text-puregold-green hover:underline font-bold">Clear</button>
+                        </h3>
+                        <div id="discord-log-list" class="space-y-2 overflow-y-auto max-h-[520px] text-xs flex-1">
+                            <p class="text-slate-400 text-center py-6">No messages sent in this session yet.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3 text-xs">
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-database text-puregold-green"></i> Full Data Backup (Discord Database)
+                    </h3>
+                    <p class="text-slate-500 leading-relaxed">Everything is saved in this browser automatically. Use these buttons to also keep a full off-device copy in your Discord channel: <b>all transactions and sales analytics, product inventory &amp; stock, cashier staff, Perks members and shift logs</b> (one .json file plus .csv sheets). Passwords and Discord secrets are never included.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" onclick="backupAllToDiscord()" id="discord-backup-btn" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-2"><i class="fa-brands fa-discord"></i> Backup ALL Data to Discord</button>
+                        <button type="button" onclick="downloadTransactionBackup()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold rounded-xl flex items-center gap-2"><i class="fa-solid fa-download"></i> Download Full Backup (.json)</button>
+                        <label class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold rounded-xl flex items-center gap-2 cursor-pointer"><i class="fa-solid fa-upload"></i> Restore Full Backup...<input type="file" accept=".json,application/json" class="hidden" onchange="restoreFullBackup(event)"></label>
+                        <button type="button" onclick="restoreLatestFromDiscord()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-2"><i class="fa-brands fa-discord"></i> Restore Latest from Discord</button>
+                        <button type="button" onclick="browseDiscordBackups()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold rounded-xl flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left"></i> Browse Discord Backups</button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1 uppercase tracking-wider text-[10px]">Backup Channel ID (where backups are posted &amp; restored from)</label>
+                            <input type="text" id="discord-backup-channel" autocomplete="off" class="w-full p-2.5 bg-slate-50 border border-slate-300 text-slate-800 rounded-xl font-mono text-[11px] focus:outline-none focus:ring-2 focus:ring-puregold-green" placeholder="e.g. your #general channel ID">
+                        </div>
+                        <p class="text-[10px] text-slate-500 leading-relaxed self-end">Needs the <b>Bot Token</b>. When both are saved, backups are posted by the bot so it can read them back later (the bot also needs <i>Read Message History</i> there). Backups posted earlier by a webhook can only be read if the bot has <b>Message Content Intent</b> turned on in the Developer Portal.</p>
+                    </div>
+                    <div id="discord-backup-list" class="space-y-2"></div>
+                    <p class="text-[10px] text-slate-400">Restore only adds what is missing (new invoices, products by barcode, staff and members by ID); existing records are left untouched. Restored staff get the temporary password <b>cashier123</b>.</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-indigo-200 space-y-3 text-xs">
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-3 flex items-center gap-2">
+                        <i class="fa-brands fa-discord text-indigo-600"></i> Discord Database (SQL-style tables)
+                    </h3>
+                    <p class="text-slate-500 leading-relaxed">Each record is stored as one message (a "row") in a private Discord channel, tagged with its table: <code class="bg-slate-100 px-1 rounded">products</code>, <code class="bg-slate-100 px-1 rounded">staff</code>, <code class="bg-slate-100 px-1 rounded">members</code>, <code class="bg-slate-100 px-1 rounded">transactions</code>, <code class="bg-slate-100 px-1 rounded">sessions</code>. Rows are updated in place (upsert), and you can read them back with SQL <b>SELECT</b> queries. Requires the <b>Bot Token</b> above (webhooks cannot read data back), and the bot needs <i>View Channel, Send Messages, Read Message History</i> in that channel.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1 uppercase tracking-wider text-[10px]">Default Database Channel ID (fallback for any table without its own)</label>
+                            <input type="text" id="discord-db-channel" autocomplete="off" class="w-full p-2.5 bg-slate-50 border border-slate-300 text-slate-800 rounded-xl font-mono text-[11px] focus:outline-none focus:ring-2 focus:ring-puregold-green" placeholder="Use a separate channel from your logs">
+                        </div>
+                        <label class="flex items-center gap-2.5 p-2.5 bg-indigo-50 border border-indigo-200 rounded-xl cursor-pointer self-end"><input type="checkbox" id="discord-db-autosync" class="rounded text-puregold-green"> <span class="font-semibold text-slate-700">Auto-sync changed rows (~20 sec after changes)</span></label>
+                    </div>
+                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                        <p class="font-bold text-[10px] uppercase tracking-wider text-slate-700">Channel per table (right-click a channel → Copy Channel ID)</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <label class="text-[10px] font-semibold text-slate-600">#inventory → <b>products</b><input type="text" id="discord-dbch-products" class="mt-0.5 w-full p-2 bg-white border border-slate-300 rounded-lg font-mono text-[10px]" placeholder="channel ID"></label>
+                            <label class="text-[10px] font-semibold text-slate-600">#users → <b>staff</b><input type="text" id="discord-dbch-staff" class="mt-0.5 w-full p-2 bg-white border border-slate-300 rounded-lg font-mono text-[10px]" placeholder="channel ID"></label>
+                            <label class="text-[10px] font-semibold text-slate-600">#users → <b>members</b> (Perks cards)<input type="text" id="discord-dbch-members" class="mt-0.5 w-full p-2 bg-white border border-slate-300 rounded-lg font-mono text-[10px]" placeholder="channel ID (same as users)"></label>
+                            <label class="text-[10px] font-semibold text-slate-600">#transaction → <b>transactions</b><input type="text" id="discord-dbch-transactions" class="mt-0.5 w-full p-2 bg-white border border-slate-300 rounded-lg font-mono text-[10px]" placeholder="channel ID"></label>
+                            <label class="text-[10px] font-semibold text-slate-600">#audit → <b>sessions</b> (shift logs)<input type="text" id="discord-dbch-sessions" class="mt-0.5 w-full p-2 bg-white border border-slate-300 rounded-lg font-mono text-[10px]" placeholder="channel ID"></label>
+                            <label class="text-[10px] font-semibold text-slate-600">#discounts → <b>discounts</b> (sales with discounts/points)<input type="text" id="discord-dbch-discounts" class="mt-0.5 w-full p-2 bg-white border border-slate-300 rounded-lg font-mono text-[10px]" placeholder="channel ID"></label>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1 uppercase tracking-wider text-[10px]">API Base URL (optional proxy, only if direct Discord calls are blocked)</label>
+                        <input type="text" id="discord-api-base" autocomplete="off" class="w-full p-2.5 bg-slate-50 border border-slate-300 text-slate-800 rounded-xl font-mono text-[11px] focus:outline-none focus:ring-2 focus:ring-puregold-green" placeholder="Leave blank, or e.g. https://discord-proxy.yourname.workers.dev/api/v10">
+                    </div>
+                    <p class="text-[10px] text-slate-400">Save the settings above first, then use the buttons below. Auto-sync only turns on after you have run one manual Sync or Load on this browser.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" onclick="dbVerifyChannel()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold rounded-xl flex items-center gap-2"><i class="fa-solid fa-plug-circle-check"></i> Verify DB Channel</button>
+                        <button type="button" onclick="dbSyncAll(true)" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-2"><i class="fa-solid fa-cloud-arrow-up"></i> Sync All to Discord DB</button>
+                        <button type="button" onclick="dbLoadAll()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold rounded-xl flex items-center gap-2"><i class="fa-solid fa-cloud-arrow-down"></i> Load from Discord DB</button>
+                    </div>
+                    <p id="discord-db-status" class="text-[11px] font-semibold text-slate-500">Idle.</p>
+
+                    <div class="pt-3 border-t border-slate-200 space-y-2">
+                        <label class="block font-bold text-slate-700 uppercase tracking-wider text-[10px]">SQL Query</label>
+                        <textarea id="discord-sql-input" rows="2" spellcheck="false" class="w-full p-2.5 bg-slate-900 text-emerald-300 border border-slate-700 rounded-xl font-mono text-[11px] focus:outline-none focus:ring-2 focus:ring-puregold-green">SELECT name, price, stock FROM products WHERE stock < 20 ORDER BY stock ASC LIMIT 20</textarea>
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <button type="button" onclick="dbRunQuery()" class="px-4 py-2 bg-puregold-green hover:bg-emerald-700 text-puregold-yellow font-extrabold rounded-xl flex items-center gap-2"><i class="fa-solid fa-play"></i> Run Query</button>
+                            <span class="text-[10px] text-slate-400">Supports SELECT cols|*|COUNT(*) FROM table [WHERE a = 1 AND b LIKE '%x%'] [ORDER BY col ASC|DESC] [LIMIT n]. Operators: = != &lt; &gt; &lt;= &gt;= LIKE.</span>
+                        </div>
+                        <div id="discord-sql-result" class="overflow-auto max-h-80 border border-slate-200 rounded-xl bg-slate-50 text-[11px]"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <!-- NOTIFICATION MODAL -->
@@ -1711,6 +1875,7 @@
                     time: new Date().toLocaleString()
                 });
                 persistData();
+                sendDiscordShiftEvent('login', "Scanned ID Barcode");
                 initAuthenticatedApp();
             } else {
                 if(errBox) {
@@ -1809,6 +1974,7 @@
                 const savedCashiers = localStorage.getItem('todamax_cashier_staff');
                 if (savedCashiers) { try { cashierStaffList = JSON.parse(savedCashiers); } catch(e) {} }
             } catch(e) {}
+            loadDiscordSettings();
             updateNotificationBadge();
         }
 
@@ -1820,6 +1986,8 @@
                 localStorage.setItem('todamax_cashier_staff', JSON.stringify(cashierStaffList));
             } catch (e) {}
             updateNotificationBadge();
+            scheduleAutoBackup();
+            scheduleDbSync();
         }
 
         function updateNotificationBadge() {
@@ -1853,6 +2021,996 @@
         function closeNotificationModal() {
             const modal = document.getElementById('notification-modal');
             if(modal) modal.classList.add('hidden');
+        }
+
+
+        // ===================== DISCORD INTEGRATION (WEBHOOK + BOT) =====================
+        const DISCORD_STORAGE_KEY = 'todamax_discord_settings';
+        const DISCORD_WEBHOOK_RE = /^https:\/\/(?:(?:canary|ptb)\.)?(?:discord|discordapp)\.com\/api(?:\/v\d+)?\/webhooks\/\d+\/[\w-]+(?:\?.*)?$/i;
+        let discordSettings = {
+            webhookUrl: '', botToken: '', channelId: '',
+            evtCheckout: true, evtLowStock: true, evtShift: true, evtChanges: true, autoBackup: false, dbChannelId: '', backupChannelId: '', apiBase: '', dbAutoSync: false,
+            routes: { checkout: '', lowstock: '', shift: '', changes: '', backup: '' },
+            dbChannels: { products: '', staff: '', members: '', transactions: '', sessions: '', discounts: '' },
+            lowThreshold: 15
+        };
+        // Discord REST base. Default is Discord itself; set a proxy URL in settings if the browser blocks direct calls (CORS).
+        function dcApi() { return ((discordSettings.apiBase || '').replace(/\/+$/, '')) || 'https://discord.com/api/v10'; }
+        const DC_ROUTE_KEYS = ['checkout', 'lowstock', 'shift', 'changes', 'backup'];
+        // Picks the webhook for an event: its own destination first, then the default webhook.
+        function dcHookFor(route) {
+            const r = route && discordSettings.routes ? discordSettings.routes[route] : '';
+            return (r && DISCORD_WEBHOOK_RE.test(r)) ? r : (DISCORD_WEBHOOK_RE.test(discordSettings.webhookUrl) ? discordSettings.webhookUrl : '');
+        }
+        let discordLog = [];
+        let discordQueue = [];
+        let discordSending = false;
+
+        // Light obfuscation only (NOT encryption) so secrets aren't plain text in DevTools storage view.
+        function dcEncode(v) { try { return v ? 'b64:' + btoa(unescape(encodeURIComponent(v))) : ''; } catch(e) { return ''; } }
+        function dcDecode(v) {
+            try { return (v && v.startsWith('b64:')) ? decodeURIComponent(escape(atob(v.slice(4)))) : (v || ''); } catch(e) { return ''; }
+        }
+
+        function loadDiscordSettings() {
+            try {
+                const raw = localStorage.getItem(DISCORD_STORAGE_KEY);
+                if (!raw) return;
+                const o = JSON.parse(raw);
+                discordSettings = {
+                    webhookUrl: dcDecode(o.webhookUrl),
+                    botToken: dcDecode(o.botToken),
+                    channelId: o.channelId || '',
+                    evtCheckout: o.evtCheckout !== false,
+                    evtLowStock: o.evtLowStock !== false,
+                    evtShift: o.evtShift !== false,
+                    evtChanges: o.evtChanges !== false,
+                    autoBackup: o.autoBackup === true,
+                    dbChannelId: o.dbChannelId || '',
+                    backupChannelId: o.backupChannelId || '',
+                    apiBase: o.apiBase || '',
+                    dbAutoSync: o.dbAutoSync === true,
+                    routes: Object.assign({ checkout: '', lowstock: '', shift: '', changes: '', backup: '' },
+                        Object.fromEntries(Object.entries(o.routes || {}).map(([k, v]) => [k, dcDecode(v)]))),
+                    dbChannels: Object.assign({ products: '', staff: '', members: '', transactions: '', sessions: '', discounts: '' }, o.dbChannels || {}),
+                    lowThreshold: parseInt(o.lowThreshold) > 0 ? parseInt(o.lowThreshold) : 15
+                };
+            } catch(e) {}
+        }
+
+        function persistDiscordSettings() {
+            try {
+                localStorage.setItem(DISCORD_STORAGE_KEY, JSON.stringify({
+                    webhookUrl: dcEncode(discordSettings.webhookUrl),
+                    botToken: dcEncode(discordSettings.botToken),
+                    channelId: discordSettings.channelId,
+                    evtCheckout: discordSettings.evtCheckout,
+                    evtLowStock: discordSettings.evtLowStock,
+                    evtShift: discordSettings.evtShift,
+                    evtChanges: discordSettings.evtChanges,
+                    autoBackup: discordSettings.autoBackup,
+                    dbChannelId: discordSettings.dbChannelId,
+                    backupChannelId: discordSettings.backupChannelId,
+                    apiBase: discordSettings.apiBase,
+                    dbAutoSync: discordSettings.dbAutoSync,
+                    routes: Object.fromEntries(Object.entries(discordSettings.routes).map(([k, v]) => [k, dcEncode(v)])),
+                    dbChannels: discordSettings.dbChannels,
+                    lowThreshold: discordSettings.lowThreshold
+                }));
+                return true;
+            } catch(e) { return false; }
+        }
+
+        function discordIsConfigured() {
+            return DISCORD_WEBHOOK_RE.test(discordSettings.webhookUrl) ||
+                   (!!discordSettings.botToken && /^\d{5,25}$/.test(discordSettings.channelId)) ||
+                   DC_ROUTE_KEYS.some(k => DISCORD_WEBHOOK_RE.test(discordSettings.routes[k] || ''));
+        }
+
+        function updateDiscordStatusBadge() {
+            const b = document.getElementById('discord-status-badge');
+            if (!b) return;
+            if (discordIsConfigured()) {
+                b.className = "text-[11px] font-bold px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200";
+                b.innerText = DISCORD_WEBHOOK_RE.test(discordSettings.webhookUrl) ? "Connected via Webhook" : "Connected via Bot";
+            } else {
+                b.className = "text-[11px] font-bold px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200";
+                b.innerText = "Not configured";
+            }
+        }
+
+        function renderDiscordSettingsForm() {
+            const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+            const chk = (id, v) => { const el = document.getElementById(id); if (el) el.checked = !!v; };
+            set('discord-webhook-url', discordSettings.webhookUrl);
+            set('discord-bot-token', discordSettings.botToken);
+            set('discord-channel-id', discordSettings.channelId);
+            set('discord-low-threshold', discordSettings.lowThreshold);
+            chk('discord-evt-checkout', discordSettings.evtCheckout);
+            chk('discord-evt-lowstock', discordSettings.evtLowStock);
+            chk('discord-evt-shift', discordSettings.evtShift);
+            chk('discord-evt-changes', discordSettings.evtChanges);
+            chk('discord-auto-backup', discordSettings.autoBackup);
+            set('discord-db-channel', discordSettings.dbChannelId);
+            set('discord-backup-channel', discordSettings.backupChannelId);
+            set('discord-api-base', discordSettings.apiBase);
+            chk('discord-db-autosync', discordSettings.dbAutoSync);
+            DC_ROUTE_KEYS.forEach(k => set('discord-route-' + k, discordSettings.routes[k] || ''));
+            DB_TABLES.forEach(t => set('discord-dbch-' + t, (discordSettings.dbChannels || {})[t] || ''));
+            updateDiscordStatusBadge();
+            renderDiscordLog();
+        }
+
+        function toggleDiscordSecret(inputId, btn) {
+            const el = document.getElementById(inputId);
+            if (!el) return;
+            const show = el.type === 'password';
+            el.type = show ? 'text' : 'password';
+            if (btn) btn.innerHTML = show ? '<i class="fa-solid fa-eye-slash"></i>' : '<i class="fa-solid fa-eye"></i>';
+        }
+
+        function readDiscordForm() {
+            const v = id => (document.getElementById(id)?.value || '').trim();
+            const c = id => !!document.getElementById(id)?.checked;
+            return {
+                webhookUrl: v('discord-webhook-url'),
+                botToken: v('discord-bot-token').replace(/^Bot\s+/i, ''),
+                channelId: v('discord-channel-id'),
+                evtCheckout: c('discord-evt-checkout'),
+                evtLowStock: c('discord-evt-lowstock'),
+                evtShift: c('discord-evt-shift'),
+                evtChanges: c('discord-evt-changes'),
+                autoBackup: c('discord-auto-backup'),
+                dbChannelId: v('discord-db-channel'),
+                backupChannelId: v('discord-backup-channel'),
+                apiBase: v('discord-api-base').replace(/\/+$/, ''),
+                dbAutoSync: c('discord-db-autosync'),
+                routes: Object.fromEntries(DC_ROUTE_KEYS.map(k => [k, v('discord-route-' + k)])),
+                dbChannels: Object.fromEntries(DB_TABLES.map(t => [t, v('discord-dbch-' + t)])),
+                lowThreshold: Math.max(1, parseInt(v('discord-low-threshold')) || 15)
+            };
+        }
+
+        function saveDiscordSettings(e) {
+            if (e) e.preventDefault();
+            const f = readDiscordForm();
+            if (f.webhookUrl && !DISCORD_WEBHOOK_RE.test(f.webhookUrl)) {
+                alert("Invalid webhook URL. It should look like https://discord.com/api/webhooks/<id>/<token>");
+                return;
+            }
+            for (const t of DB_TABLES) {
+                if (f.dbChannels[t] && !/^\d{5,25}$/.test(f.dbChannels[t])) { alert("The channel ID for '" + t + "' must be numeric."); return; }
+            }
+            for (const k of DC_ROUTE_KEYS) {
+                if (f.routes[k] && !DISCORD_WEBHOOK_RE.test(f.routes[k])) { alert("Invalid webhook URL in the '" + k + "' destination."); return; }
+            }
+            if (f.apiBase && !/^https:\/\/[^\s]+$/i.test(f.apiBase)) { alert("API Base URL must start with https://"); return; }
+            if (f.backupChannelId && !/^\d{5,25}$/.test(f.backupChannelId)) {
+                alert("Backup Channel ID must be numeric.");
+                return;
+            }
+            if (f.dbChannelId && !/^\d{5,25}$/.test(f.dbChannelId)) {
+                alert("Database Channel ID must be numeric.");
+                return;
+            }
+            if (f.channelId && !/^\d{5,25}$/.test(f.channelId)) {
+                alert("Channel ID must be numeric (enable Developer Mode in Discord, then right-click the channel → Copy Channel ID).");
+                return;
+            }
+            discordSettings = f;
+            const ok = persistDiscordSettings();
+            updateDiscordStatusBadge();
+            alert(ok ? "Discord settings saved. They will persist across reloads." : "Could not save to localStorage (browser storage may be blocked).");
+        }
+
+        function clearDiscordSettings() {
+            if (!confirm("Remove the saved Discord webhook, bot token and settings from this browser?")) return;
+            try { localStorage.removeItem(DISCORD_STORAGE_KEY); } catch(e) {}
+            discordSettings = { webhookUrl: '', botToken: '', channelId: '', evtCheckout: true, evtLowStock: true, evtShift: true, evtChanges: true, autoBackup: false, dbChannelId: '', backupChannelId: '', apiBase: '', dbAutoSync: false, routes: { checkout: '', lowstock: '', shift: '', changes: '', backup: '' }, dbChannels: { products: '', staff: '', members: '', transactions: '', sessions: '', discounts: '' }, lowThreshold: 15 };
+            renderDiscordSettingsForm();
+        }
+
+        function logDiscord(kind, ok, detail) {
+            discordLog.unshift({ kind, ok, detail, time: new Date().toLocaleTimeString() });
+            if (discordLog.length > 50) discordLog.length = 50;
+            renderDiscordLog();
+        }
+
+        function renderDiscordLog() {
+            const el = document.getElementById('discord-log-list');
+            if (!el) return;
+            if (!discordLog.length) {
+                el.innerHTML = `<p class="text-slate-400 text-center py-6">No messages sent in this session yet.</p>`;
+                return;
+            }
+            const esc = t => String(t).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+            el.innerHTML = discordLog.map(l => `
+                <div class="p-2.5 rounded-xl border ${l.ok ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}">
+                    <div class="flex justify-between font-bold ${l.ok ? 'text-emerald-800' : 'text-red-700'}">
+                        <span><i class="fa-solid ${l.ok ? 'fa-circle-check' : 'fa-circle-xmark'} mr-1"></i>${esc(l.kind)}</span>
+                        <span class="text-[10px] font-mono text-slate-500">${esc(l.time)}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-600 mt-0.5 break-words">${esc(l.detail)}</p>
+                </div>`).join('');
+        }
+
+        const dcTrunc = (t, n) => { t = String(t); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
+        const dcPeso = n => '₱' + Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        // Core sender: queued so Discord rate limits (429) are respected.
+        function sendDiscordEmbed(embed, kind, route) {
+            return new Promise(resolve => {
+                if (!discordIsConfigured()) { resolve({ ok: false, skipped: true, error: 'Discord is not configured.' }); return; }
+                embed.timestamp = embed.timestamp || new Date().toISOString();
+                embed.footer = embed.footer || { text: 'TodaMaxTipid Gold POS • ' + activeBranch };
+                discordQueue.push({ embed, kind, route, resolve, tries: 0 });
+                processDiscordQueue();
+            });
+        }
+
+        async function processDiscordQueue() {
+            if (discordSending) return;
+            discordSending = true;
+            while (discordQueue.length) {
+                const job = discordQueue[0];
+                const body = { username: 'TodaMaxTipid Gold POS', embeds: [job.embed], allowed_mentions: { parse: [] } };
+                let res, errText = '';
+                try {
+                    const hook = dcHookFor(job.route);
+                    if (hook) {
+                        const url = hook + (hook.includes('?') ? '&' : '?') + 'wait=true';
+                        res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                    } else {
+                        res = await fetch(`${dcApi()}/channels/${discordSettings.channelId}/messages`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + discordSettings.botToken },
+                            body: JSON.stringify({ embeds: body.embeds, allowed_mentions: body.allowed_mentions })
+                        });
+                    }
+                } catch (err) {
+                    errText = 'Network error: ' + err.message;
+                }
+
+                if (res && res.status === 429 && job.tries < 3) {
+                    let wait = 1500;
+                    try { const j = await res.json(); wait = Math.ceil((j.retry_after || 1.5) * 1000); } catch(e) {}
+                    job.tries++;
+                    await new Promise(r => setTimeout(r, wait + 200));
+                    continue;
+                }
+
+                discordQueue.shift();
+                if (res && res.ok) {
+                    logDiscord(job.kind, true, 'Delivered to Discord.');
+                    job.resolve({ ok: true });
+                } else {
+                    if (res) {
+                        try { const j = await res.json(); errText = `HTTP ${res.status}: ${j.message || JSON.stringify(j)}`; }
+                        catch(e) { errText = `HTTP ${res.status}`; }
+                    }
+                    logDiscord(job.kind, false, errText || 'Unknown error');
+                    job.resolve({ ok: false, error: errText });
+                }
+                await new Promise(r => setTimeout(r, 350));
+            }
+            discordSending = false;
+        }
+
+        // ---- Event builders ----
+        function sendDiscordCheckoutEvent(rec) {
+            if (!discordSettings.evtCheckout || !discordIsConfigured()) return;
+            const lines = (rec.items || []).map(i => `• ${i.qty}× ${i.name} — ${dcPeso(i.qty * i.price)}`);
+            const fields = [
+                { name: '🧾 Invoice #', value: '`' + rec.inv + '`', inline: true },
+                { name: '👤 Cashier', value: `${dcTrunc(rec.cashierName || 'N/A', 80)} (${rec.cashierId || 'N/A'})`, inline: true },
+                { name: '💳 Payment Method', value: rec.method, inline: true },
+                { name: '🛒 Items Bought (' + rec.itemsCount + ')', value: dcTrunc(lines.join('\n') || 'N/A', 1024) },
+                { name: 'Subtotal', value: dcPeso(rec.subtotal), inline: true },
+                { name: 'Discount', value: '-' + dcPeso((rec.discount || 0) + (rec.pointsRedeemed || 0)), inline: true },
+                { name: '💰 Total Amount', value: '**' + dcPeso(rec.total) + '**', inline: true }
+            ];
+            if (rec.loyaltyMember) fields.push({ name: '🎟️ Perks Member', value: dcTrunc(rec.loyaltyMember, 200) + (rec.points ? ` (+${rec.points} pts)` : ''), inline: false });
+            sendDiscordEmbed({ title: '✅ New POS Transaction Completed', color: 0x006837, fields }, 'Checkout ' + rec.inv, 'checkout');
+        }
+
+        function didCrossLowStock(prev, now) {
+            const t = discordSettings.lowThreshold || 15;
+            return now < prev && now < t && prev >= t;
+        }
+
+        function sendDiscordLowStockEvent(prods, source) {
+            if (!discordSettings.evtLowStock || !discordIsConfigured() || !prods.length) return;
+            const lines = prods.map(p => `• **${dcTrunc(p.name, 90)}** — ${p.stock} left (${p.category})${p.stock === 0 ? ' ⛔ OUT OF STOCK' : ''}`);
+            sendDiscordEmbed({
+                title: '⚠️ Low Stock Alert',
+                description: dcTrunc(lines.join('\n'), 3800),
+                color: 0xef4444,
+                fields: [
+                    { name: 'Threshold', value: `< ${discordSettings.lowThreshold} units`, inline: true },
+                    { name: 'Triggered By', value: dcTrunc(source || 'Stock update', 200), inline: true }
+                ]
+            }, 'Low Stock (' + prods.length + ')', 'lowstock');
+        }
+
+        function sendDiscordShiftEvent(type, method) {
+            if (!discordSettings.evtShift || !discordIsConfigured() || !currentEmployee) return;
+            const isIn = type === 'login';
+            const fields = [
+                { name: '👤 Cashier', value: `${dcTrunc(currentEmployee.name, 80)} (${currentEmployee.id})`, inline: true },
+                { name: '🕒 Time', value: new Date().toLocaleString(), inline: true }
+            ];
+            if (isIn && method) fields.push({ name: 'Login Method', value: method, inline: true });
+            if (!isIn) {
+                const mine = (salesData.ledger || []).filter(r => r.cashierId === currentEmployee.id);
+                fields.push({ name: 'Transactions (all-time active log)', value: String(mine.length), inline: true });
+                fields.push({ name: 'Cash In Drawer (expected)', value: dcPeso(shiftData.startingFund + shiftData.cashSales), inline: true });
+            }
+            sendDiscordEmbed({
+                title: isIn ? '🟢 Cashier Logged In — Shift Started' : '🔴 Cashier Logged Out — Shift Ended',
+                color: isIn ? 0x3b82f6 : 0x94a3b8,
+                fields
+            }, (isIn ? 'Login: ' : 'Logout: ') + currentEmployee.name, 'shift');
+        }
+
+        async function testDiscordNotification() {
+            // Test using the values currently typed in the form (even if not yet saved)
+            const f = readDiscordForm();
+            if (f.webhookUrl && !DISCORD_WEBHOOK_RE.test(f.webhookUrl)) { alert("Invalid webhook URL format."); return; }
+            const backup = discordSettings;
+            discordSettings = Object.assign({}, backup, { webhookUrl: f.webhookUrl, botToken: f.botToken, channelId: f.channelId });
+            const btn = document.getElementById('discord-test-btn');
+            const oldHtml = btn ? btn.innerHTML : '';
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...'; }
+
+            const result = await sendDiscordEmbed({
+                title: '🔔 Test Notification',
+                description: 'TodaMaxTipid Gold POS is connected to this Discord channel.',
+                color: 0x5865F2,
+                fields: [
+                    { name: 'Sent By', value: dcTrunc(currentEmployee?.name || 'Admin', 80), inline: true },
+                    { name: 'Time', value: new Date().toLocaleString(), inline: true }
+                ]
+            }, 'Test Notification');
+            const routeResults = [];
+            for (const key of DC_ROUTE_KEYS) {
+                if (discordSettings.routes[key]) {
+                    const rr = await sendDiscordEmbed({ title: '🔔 Test (' + key + ' destination)', description: 'Routed webhook for ' + key + ' events works.', color: 0x5865F2 }, 'Test ' + key, key);
+                    routeResults.push(key + ': ' + (rr.ok ? 'OK' : 'FAILED'));
+                }
+            }
+
+            discordSettings = backup;
+            if (btn) { btn.disabled = false; btn.innerHTML = oldHtml; }
+            if (result.ok) alert("✅ Success! Check your Discord channel for the test embed.\nClick “Save Settings” to keep these credentials." + (routeResults.length ? "\n\nDestinations:\n" + routeResults.join("\n") : ""));
+            else alert("❌ Test failed: " + (result.error || 'Unknown error') + "\n\nCheck the URL/token and the Delivery Log.");
+        }
+
+
+        // ---- Generic change-log embed ----
+        function sendDiscordChangeEvent(title, fields, color) {
+            if (!discordSettings.evtChanges || !discordIsConfigured()) return;
+            fields = fields.concat([{ name: 'By', value: dcTrunc((currentEmployee && currentEmployee.name) || 'System', 80), inline: true }]);
+            sendDiscordEmbed({ title, color: color || 0x006837, fields }, title.replace(/^\S+\s/, ''), 'changes');
+        }
+
+        // ---- FULL DATA BACKUP / RESTORE ----
+        function buildFullBackup() {
+            return {
+                app: 'TodaMaxTipid Gold POS',
+                version: 2,
+                exportedAt: new Date().toISOString(),
+                branch: activeBranch,
+                transactions: salesData.ledger || [],
+                archived: salesData.archiveLedger || [],
+                salesData: {
+                    totalRevenue: salesData.totalRevenue, transactions: salesData.transactions, itemsSold: salesData.itemsSold,
+                    hourlySales: salesData.hourlySales, categoryTotals: salesData.categoryTotals,
+                    productSalesHistory: salesData.productSalesHistory, cashierSessions: salesData.cashierSessions || []
+                },
+                products: products,
+                cashierStaff: cashierStaffList.map(c => { const { password, ...rest } = c; return rest; }), // passwords never exported
+                loyaltyMembers: loyaltyMembers
+            };
+        }
+
+        function toCsv(head, rows) {
+            const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+            return [head.map(q).join(',')].concat(rows.map(r => r.map(q).join(','))).join('\n');
+        }
+
+        function backupCsvFiles(d) {
+            return {
+                transactions: toCsv(['Invoice','Time','CashierID','Cashier','Payment','Items','Subtotal','Discount','PointsRedeemed','Total','Member','Summary'],
+                    d.transactions.map(r => [r.inv, r.time, r.cashierId, r.cashierName, r.method, r.itemsCount, r.subtotal, r.discount, r.pointsRedeemed || 0, r.total, r.loyaltyMember || '', r.summary])),
+                inventory: toCsv(['ID','Name','Category','Barcode','Price','Stock'],
+                    d.products.map(p => [p.id, p.name, p.category, p.barcode, p.price, p.stock])),
+                staff: toCsv(['EmployeeID','Username','Name','Phone','Address','Emergency','Shift','Hired'],
+                    d.cashierStaff.map(c => [c.id, c.username, c.name, c.phone, c.address, c.emergency, c.shift, c.hired])),
+                members: toCsv(['CardID','Name','Phone','Address','Points'],
+                    d.loyaltyMembers.map(m => [m.id, m.name, m.phone, m.address, m.points]))
+            };
+        }
+
+        function downloadTransactionBackup() {
+            const blob = new Blob([JSON.stringify(buildFullBackup(), null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'todamax-full-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        }
+
+        let autoBackupTimer = null;
+        let autoBackupBusy = false;
+        function scheduleAutoBackup() {
+            if (typeof discordSettings === 'undefined' || !discordSettings.autoBackup || !discordIsConfigured()) return;
+            clearTimeout(autoBackupTimer);
+            autoBackupTimer = setTimeout(() => backupAllToDiscord(true), 120000);
+        }
+
+        async function backupAllToDiscord(silent) {
+            if (autoBackupBusy) return;
+            if (!discordIsConfigured()) { if (!silent) alert("Discord is not configured. Save a webhook URL (or bot token + channel ID) first."); return; }
+            autoBackupBusy = true;
+            const btn = document.getElementById('discord-backup-btn');
+            const old = btn ? btn.innerHTML : '';
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...'; }
+
+            const d = buildFullBackup();
+            const csv = backupCsvFiles(d);
+            const day = new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '-');
+            const files = [
+                [`full-backup-${day}.json`, JSON.stringify(d, null, 2), 'application/json'],
+                [`transactions-${day}.csv`, csv.transactions, 'text/csv'],
+                [`inventory-${day}.csv`, csv.inventory, 'text/csv'],
+                [`cashier-staff-${day}.csv`, csv.staff, 'text/csv'],
+                [`perks-members-${day}.csv`, csv.members, 'text/csv']
+            ];
+            const total = d.transactions.reduce((a, r) => a + (r.total || 0), 0);
+            const form = new FormData();
+            form.append('payload_json', JSON.stringify({
+                username: 'TodaMaxTipid Gold POS',
+                allowed_mentions: { parse: [] },
+                embeds: [{
+                    title: silent ? '💾 Auto-Backup: Full System Data' : '💾 Full System Backup',
+                    color: 0x006837,
+                    fields: [
+                        { name: 'Transactions', value: String(d.transactions.length), inline: true },
+                        { name: 'Archived', value: String(d.archived.length), inline: true },
+                        { name: 'Active Sales', value: dcPeso(total), inline: true },
+                        { name: 'Products', value: String(d.products.length), inline: true },
+                        { name: 'Cashier Staff', value: String(d.cashierStaff.length), inline: true },
+                        { name: 'Perks Members', value: String(d.loyaltyMembers.length), inline: true }
+                    ],
+                    footer: { text: 'TodaMaxTipid Gold POS • ' + activeBranch },
+                    timestamp: new Date().toISOString()
+                }],
+                attachments: files.map((f, i) => ({ id: i, filename: f[0] }))
+            }));
+            files.forEach((f, i) => form.append(`files[${i}]`, new Blob([f[1]], { type: f[2] }), f[0]));
+
+            try {
+                let res;
+                const bCh = dcBackupChannel();
+                const bHook = (discordSettings.botToken && bCh) ? '' : dcHookFor('backup');
+                if (bHook) {
+                    res = await fetch(bHook + (bHook.includes('?') ? '&' : '?') + 'wait=true', { method: 'POST', body: form });
+                } else {
+                    res = await fetch(`${dcApi()}/channels/${bCh || discordSettings.channelId}/messages`, { method: 'POST', headers: { 'Authorization': 'Bot ' + discordSettings.botToken }, body: form });
+                }
+                if (!res.ok) {
+                    let m = 'HTTP ' + res.status;
+                    try { const j = await res.json(); m += ': ' + (j.message || JSON.stringify(j)); } catch(e) {}
+                    throw new Error(m);
+                }
+                logDiscord(silent ? 'Auto-Backup' : 'Full Backup', true, `Uploaded full backup (${d.transactions.length} transactions, ${d.products.length} products, ${d.cashierStaff.length} staff, ${d.loyaltyMembers.length} members).`);
+                if (!silent) alert("✅ Full backup uploaded to Discord.");
+            } catch (err) {
+                logDiscord(silent ? 'Auto-Backup' : 'Full Backup', false, err.message);
+                if (!silent) alert("❌ Backup failed: " + err.message);
+            }
+            autoBackupBusy = false;
+            if (btn) { btn.disabled = false; btn.innerHTML = old; }
+        }
+
+        function applyBackupData(data) {
+            try {
+                    const incomingTx = (Array.isArray(data) ? data : (data.transactions || []))
+                        .filter(r => r && typeof r.inv === 'string' && typeof r.total === 'number' && Array.isArray(r.items));
+                    const known = new Set((salesData.ledger || []).concat(salesData.archiveLedger || []).map(r => r.inv));
+                    const newTx = incomingTx.filter(r => !known.has(r.inv));
+                    const byBarcode = new Set(products.map(p => p.barcode));
+                    const newProducts = (data.products || []).filter(p => p && p.barcode && p.name && !byBarcode.has(p.barcode));
+                    const staffIds = new Set(cashierStaffList.map(c => c.id));
+                    const staffUser = new Set(cashierStaffList.map(c => (c.username || '').toLowerCase()));
+                    const newStaff = (data.cashierStaff || []).filter(c => c && c.id && c.username && !staffIds.has(c.id) && !staffUser.has(c.username.toLowerCase()));
+                    const memberIds = new Set(loyaltyMembers.map(m => m.id));
+                    const newMembers = (data.loyaltyMembers || []).filter(m => m && m.id && !memberIds.has(m.id));
+                    const sessions = (data.salesData && Array.isArray(data.salesData.cashierSessions)) ? data.salesData.cashierSessions : [];
+                    const sessKey = x => [x.empId, x.action, x.time].join('|');
+                    const haveSess = new Set((salesData.cashierSessions || []).map(sessKey));
+                    const newSess = sessions.filter(x => x && !haveSess.has(sessKey(x)));
+
+                    if (!newTx.length && !newProducts.length && !newStaff.length && !newMembers.length && !newSess.length) {
+                        alert("Nothing to restore: everything in that file already exists (or the file is not a valid backup).");
+                        return;
+                    }
+                    if (!confirm(`Restore from backup?\n\n• ${newTx.length} transaction(s)\n• ${newProducts.length} product(s)\n• ${newStaff.length} cashier staff (temporary password: cashier123)\n• ${newMembers.length} Perks member(s)\n• ${newSess.length} shift log entr${newSess.length === 1 ? 'y' : 'ies'}\n\nExisting records will not be changed.`)) return;
+
+                    newTx.forEach(r => {
+                        salesData.ledger.push(r);
+                        salesData.totalRevenue += r.total;
+                        salesData.transactions++;
+                        salesData.itemsSold += (r.itemsCount || 0);
+                        (r.items || []).forEach(i => {
+                            const prod = products.find(p => p.name === i.name) || newProducts.find(p => p.name === i.name);
+                            if (prod) salesData.categoryTotals[prod.category] = (salesData.categoryTotals[prod.category] || 0) + (i.price * i.qty);
+                        });
+                    });
+                    salesData.ledger.sort((a, b) => (new Date(b.time) || 0) - (new Date(a.time) || 0));
+                    let nextId = products.length ? Math.max(...products.map(p => p.id)) + 1 : 1;
+                    newProducts.forEach(p => products.push({ id: nextId++, name: p.name, category: p.category || 'Grocery', price: Number(p.price) || 0, stock: parseInt(p.stock) || 0, barcode: String(p.barcode) }));
+                    newStaff.forEach(c => cashierStaffList.push(Object.assign({}, c, { password: 'cashier123', role: c.role || 'POS Cashier' })));
+                    newMembers.forEach(m => loyaltyMembers.push(m));
+                    salesData.cashierSessions = (salesData.cashierSessions || []).concat(newSess);
+
+                    persistData();
+                    updateAnalyticsDashboard(); renderReceiptHistoryTab(); renderCashierLogsTab();
+                    renderStockViewTable(); renderInventoryTable(); renderQRProductSelector();
+                    renderCashierStaffList(); renderLoyaltyMembersList();
+                    logDiscord('Restore', true, `Restored ${newTx.length} tx, ${newProducts.length} products, ${newStaff.length} staff, ${newMembers.length} members.`);
+                    alert("✅ Restore complete.");
+            } catch (err) {
+                alert("Could not apply backup data: " + err.message);
+            }
+        }
+
+        function restoreFullBackup(event) {
+            const file = event.target.files[0];
+            event.target.value = '';
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    applyBackupData(JSON.parse(e.target.result));
+                } catch (err) {
+                    alert("Could not read that backup file: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+
+        // ===================== DISCORD DATABASE (rows = messages in a private channel) =====================
+        const DB_TABLES = ['products', 'staff', 'members', 'transactions', 'sessions', 'discounts'];
+        const DB_DEFAULT_PHOTO = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150';
+        const DB_HEAD = /^DB\|([a-z_]+)\|([^|\n]*)\|([0-9a-z]+)\n```json\n([\s\S]*)\n```$/;
+        let dbIndex = null;      // "table|key" -> { id: messageId, hash }
+        let dbBusy = false;
+        let dbLastCall = 0;
+        let dbSyncTimer = null;
+        const dbSleep = ms => new Promise(r => setTimeout(r, ms));
+
+        function dbChannelFor(table) {
+            const c = ((discordSettings.dbChannels || {})[table] || discordSettings.dbChannelId || '').trim();
+            return /^\d{5,25}$/.test(c) ? c : '';
+        }
+        function dbChannelsUsed() { return [...new Set(DB_TABLES.map(dbChannelFor).filter(Boolean))]; }
+        function dbReady() { return !!discordSettings.botToken && dbChannelsUsed().length > 0; }
+        function setDbStatus(t) { const el = document.getElementById('discord-db-status'); if (el) el.innerText = t; }
+        function dbHash(str) { let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
+
+        // Rate-limited Discord REST call (bot token). Writes are spaced out to stay under Discord limits.
+        async function dbRequest(method, path, body) {
+            for (let attempt = 0; attempt < 5; attempt++) {
+                const gap = method === 'GET' ? 250 : 1100;
+                const wait = Math.max(0, dbLastCall + gap - Date.now());
+                if (wait) await dbSleep(wait);
+                dbLastCall = Date.now();
+                const headers = { 'Authorization': 'Bot ' + discordSettings.botToken };
+                if (body) headers['Content-Type'] = 'application/json';
+                let res;
+                try {
+                    res = await fetch(dcApi() + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+                } catch (netErr) {
+                    throw new Error("Could not reach the Discord API from this page (network error or the browser blocked it with CORS). If you opened this file directly or your network blocks Discord, set an API Base URL (proxy) in the Discord Database card. Details: " + netErr.message);
+                }
+                if (res.status === 429) {
+                    let w = 1500;
+                    try { w = Math.ceil(((await res.json()).retry_after || 1.5) * 1000); } catch(e) {}
+                    await dbSleep(w + 200);
+                    continue;
+                }
+                if (res.status === 204) return null;
+                if (!res.ok) {
+                    let m = 'HTTP ' + res.status;
+                    try { const j = await res.json(); m += ': ' + (j.message || ''); } catch(e) {}
+                    const hints = { 401: ' → the Bot Token is wrong or was reset.', 403: ' → the bot is missing permission in that channel (needs View Channel, Send Messages, Read Message History) or is not in that server.', 404: ' → wrong channel ID, or the bot has not been invited to that server.' };
+                    throw new Error(m + (hints[res.status] || ''));
+                }
+                return await res.json();
+            }
+            throw new Error('Rate limited too many times, try again shortly.');
+        }
+
+        function dbEncode(table, key, row) {
+            const json = JSON.stringify(row).replace(/`/g, '\\u0060');
+            const hash = dbHash(json);
+            const content = `DB|${table}|${encodeURIComponent(key)}|${hash}\n\`\`\`json\n${json}\n\`\`\``;
+            if (content.length > 1990) throw new Error(`row too large (${content.length}/2000 chars)`);
+            return { content, hash };
+        }
+
+        function dbDecode(msg) {
+            const m = DB_HEAD.exec(msg.content || '');
+            if (!m) return null;
+            try { return { id: msg.id, table: m[1], key: decodeURIComponent(m[2]), hash: m[3], row: JSON.parse(m[4]) }; }
+            catch(e) { return null; }
+        }
+
+        async function dbFetchAll(channels) {
+            const out = [];
+            const seen = new Set();
+            for (const ch of (channels || dbChannelsUsed())) {
+                let before = null;
+                for (;;) {
+                    const msgs = await dbRequest('GET', `/channels/${ch}/messages?limit=100` + (before ? `&before=${before}` : ''));
+                    if (!msgs || !msgs.length) break;
+                    msgs.forEach(m => {
+                        const d = dbDecode(m);
+                        if (d && !seen.has(d.table + '|' + d.key)) { seen.add(d.table + '|' + d.key); d.channel = ch; out.push(d); } // newest copy wins
+                    });
+                    before = msgs[msgs.length - 1].id;
+                    setDbStatus(`Reading database… ${out.length} rows`);
+                    if (msgs.length < 100) break;
+                }
+            }
+            return out;
+        }
+
+        async function dbLoadIndex() {
+            const all = await dbFetchAll();
+            dbIndex = {};
+            all.forEach(d => { dbIndex[d.table + '|' + d.key] = { id: d.id, hash: d.hash, ch: d.channel }; });
+            return all;
+        }
+
+        function dbStripPhoto(o) {
+            const c = Object.assign({}, o);
+            if (typeof c.photo === 'string' && c.photo.startsWith('data:')) { c.photo = ''; c.photoLocalOnly = true; }
+            return c;
+        }
+
+        function dbCollectRows() {
+            const rows = [];
+            products.forEach(p => rows.push(['products', String(p.barcode), dbStripPhoto(p)]));
+            cashierStaffList.forEach(c => { const { password, ...r } = c; rows.push(['staff', c.id, dbStripPhoto(r)]); }); // passwords never stored
+            loyaltyMembers.forEach(m => rows.push(['members', m.id, dbStripPhoto(m)]));
+            const compact = (r, archived) => {
+                const { summary, cashierPhoto, ...rest } = r;
+                return Object.assign(rest, { items: (r.items || []).map(i => [i.name, i.qty, i.price]), archived });
+            };
+            (salesData.ledger || []).forEach(r => rows.push(['transactions', r.inv, compact(r, false)]));
+            (salesData.archiveLedger || []).forEach(r => rows.push(['transactions', r.inv, compact(r, true)]));
+            (salesData.cashierSessions || []).forEach(x => { const { photo, ...rest } = x; rows.push(['sessions', [x.empId, x.time, x.action].join('~'), rest]); });
+            // discounts table: every sale that used a discount or redeemed points
+            (salesData.ledger || []).map(r => [r, false]).concat((salesData.archiveLedger || []).map(r => [r, true])).forEach(([r, archived]) => {
+                if ((r.discount || 0) > 0 || (r.pointsRedeemed || 0) > 0) {
+                    rows.push(['discounts', r.inv, {
+                        inv: r.inv, time: r.time, cashierId: r.cashierId, cashierName: r.cashierName, loyaltyMember: r.loyaltyMember || '',
+                        subtotal: r.subtotal, discount: r.discount, pointsRedeemed: r.pointsRedeemed || 0, total: r.total, archived
+                    }]);
+                }
+            });
+            return rows;
+        }
+
+        async function dbVerifyChannel() {
+            if (!dbReady()) { alert("Save a Bot Token and at least one database channel ID first."); return; }
+            const lines = [];
+            let allOk = true;
+            for (const ch of dbChannelsUsed()) {
+                try {
+                    const info = await dbRequest('GET', `/channels/${ch}`);
+                    await dbRequest('GET', `/channels/${ch}/messages?limit=1`);
+                    lines.push(`✅ #${info.name || ch}`);
+                } catch (err) {
+                    allOk = false;
+                    lines.push(`❌ ${ch}: ${err.message}`);
+                }
+            }
+            const missing = DB_TABLES.filter(t => !dbChannelFor(t));
+            if (missing.length) lines.push(`⚠️ No channel set for: ${missing.join(', ')} (these tables will be skipped)`);
+            setDbStatus(allOk ? 'All database channels OK.' : 'Some channels failed.');
+            logDiscord('DB Verify', allOk, lines.join(' | '));
+            alert(lines.join('\n'));
+        }
+
+        async function dbSyncAll(manual) {
+            if (dbBusy) { if (manual) alert("A sync is already running."); return; }
+            if (!dbReady()) { if (manual) alert("Save a Bot Token and a Database Channel ID first."); return; }
+            dbBusy = true;
+            try {
+                setDbStatus('Reading existing rows…');
+                if (manual || !dbIndex) await dbLoadIndex();
+                const rows = dbCollectRows();
+                const todo = [];
+                let skipped = 0, tooBig = 0, noChannel = 0;
+                for (const [t, k, row] of rows) {
+                    const ch = dbChannelFor(t);
+                    if (!ch) { noChannel++; continue; }
+                    let enc;
+                    try { enc = dbEncode(t, k, row); } catch (e) { tooBig++; logDiscord('DB Sync', false, `${t}/${k}: ${e.message}`); continue; }
+                    let ex = dbIndex[t + '|' + k];
+                    if (ex && ex.ch !== ch) ex = null; // table moved to another channel: write a fresh row there
+                    if (ex && ex.hash === enc.hash) { skipped++; continue; }
+                    todo.push({ t, k, enc, ex, ch });
+                }
+                const present = new Set(rows.map(r => r[0] + '|' + r[1]));
+                const stale = manual ? Object.keys(dbIndex).filter(id => /^(products|staff|members)\|/.test(id) && !present.has(id)) : [];
+
+                if (manual) {
+                    const est = Math.ceil((todo.length + stale.length) * 1.1);
+                    if (!confirm(`Sync to Discord DB?\n\n• ${todo.filter(x => !x.ex).length} new row(s)\n• ${todo.filter(x => x.ex).length} row(s) to update\n• ${skipped} unchanged\n` +
+                        (stale.length ? `• ${stale.length} row(s) in Discord that no longer exist here (products/staff/members) will be DELETED from Discord\n` : '') +
+                        `\nEstimated time: ~${est} sec (Discord rate limits).\n\nTip: on a NEW device, use "Load from Discord DB" first, otherwise default data may overwrite your database.`)) {
+                        setDbStatus('Sync cancelled.'); dbBusy = false; return;
+                    }
+                }
+
+                let ins = 0, upd = 0, del = 0, fail = 0;
+                const total = todo.length + stale.length;
+                let n = 0;
+                for (const job of todo) {
+                    try {
+                        if (job.ex) {
+                            await dbRequest('PATCH', `/channels/${job.ch}/messages/${job.ex.id}`, { content: job.enc.content });
+                            dbIndex[job.t + '|' + job.k] = { id: job.ex.id, hash: job.enc.hash, ch: job.ch }; upd++;
+                        } else {
+                            const m = await dbRequest('POST', `/channels/${job.ch}/messages`, { content: job.enc.content, allowed_mentions: { parse: [] } });
+                            dbIndex[job.t + '|' + job.k] = { id: m.id, hash: job.enc.hash, ch: job.ch }; ins++;
+                        }
+                    } catch (e) { fail++; logDiscord('DB Sync', false, `${job.t}/${job.k}: ${e.message}`); }
+                    setDbStatus(`Syncing ${++n}/${total}…`);
+                }
+                for (const id of stale) {
+                    try { await dbRequest('DELETE', `/channels/${dbIndex[id].ch}/messages/${dbIndex[id].id}`); delete dbIndex[id]; del++; }
+                    catch (e) { fail++; logDiscord('DB Sync', false, `delete ${id}: ${e.message}`); }
+                    setDbStatus(`Syncing ${++n}/${total}…`);
+                }
+                try { localStorage.setItem('todamax_db_linked', '1'); } catch(e) {}
+                const msg = `Done: ${ins} inserted, ${upd} updated, ${del} deleted, ${skipped} unchanged` + (fail || tooBig ? `, ${fail + tooBig} failed` : '') + (noChannel ? `, ${noChannel} skipped (no channel set)` : '') + '.';
+                setDbStatus(msg);
+                if (ins || upd || del || fail || tooBig) logDiscord(manual ? 'DB Sync' : 'DB Auto-Sync', fail + tooBig === 0, msg);
+                if (manual) alert('✅ ' + msg);
+            } catch (err) {
+                setDbStatus('Sync failed: ' + err.message);
+                logDiscord('DB Sync', false, err.message);
+                if (manual) alert("❌ Sync failed: " + err.message);
+            }
+            dbBusy = false;
+        }
+
+        function scheduleDbSync() {
+            if (typeof discordSettings === 'undefined' || !discordSettings.dbAutoSync || !dbReady()) return;
+            try { if (localStorage.getItem('todamax_db_linked') !== '1') return; } catch(e) { return; }
+            clearTimeout(dbSyncTimer);
+            dbSyncTimer = setTimeout(() => dbSyncAll(false), 20000);
+        }
+
+        async function dbLoadAll() {
+            if (dbBusy) { alert("A sync is already running."); return; }
+            if (!dbReady()) { alert("Save a Bot Token and a Database Channel ID first."); return; }
+            dbBusy = true;
+            try {
+                setDbStatus('Reading database…');
+                const all = await dbLoadIndex();
+                const by = t => all.filter(d => d.table === t).map(d => d.row);
+                const fixPhoto = r => Object.assign({}, r, { photo: r.photo || DB_DEFAULT_PHOTO });
+                const rebuildTx = r => {
+                    const items = (r.items || []).map(i => Array.isArray(i) ? { name: i[0], qty: i[1], price: i[2] } : i);
+                    const { archived, ...rest } = r;
+                    return Object.assign(rest, { items, summary: items.map(i => `${i.qty}x ${i.name}`).join(', '), cashierPhoto: DB_DEFAULT_PHOTO, _archived: !!archived });
+                };
+                const txAll = by('transactions').map(rebuildTx);
+                const archivedTx = txAll.filter(r => r._archived).map(({ _archived, ...r }) => r);
+                const activeTx = txAll.filter(r => !r._archived).map(({ _archived, ...r }) => r);
+
+                const knownInv = new Set((salesData.ledger || []).concat(salesData.archiveLedger || []).map(r => r.inv));
+                if (!salesData.archiveLedger) salesData.archiveLedger = [];
+                const newArchived = archivedTx.filter(r => !knownInv.has(r.inv));
+                newArchived.forEach(r => salesData.archiveLedger.push(r));
+
+                try { localStorage.setItem('todamax_db_linked', '1'); } catch(e) {}
+                setDbStatus(`Loaded ${all.length} rows. Applying…`);
+                applyBackupData({
+                    transactions: activeTx,
+                    products: by('products'),
+                    cashierStaff: by('staff').map(fixPhoto),
+                    loyaltyMembers: by('members').map(fixPhoto),
+                    salesData: { cashierSessions: by('sessions').map(x => Object.assign({ photo: DB_DEFAULT_PHOTO }, x)) }
+                });
+                if (newArchived.length) { persistData(); updateAnalyticsDashboard(); }
+                setDbStatus(`Loaded ${all.length} rows from Discord DB.`);
+            } catch (err) {
+                setDbStatus('Load failed: ' + err.message);
+                logDiscord('DB Load', false, err.message);
+                alert("❌ Load failed: " + err.message);
+            }
+            dbBusy = false;
+        }
+
+        // ---- Mini SQL SELECT engine (reads live from the Discord channel) ----
+        function dbCoerce(v) {
+            v = String(v).trim();
+            if ((v.startsWith("'") && v.endsWith("'")) || (v.startsWith('"') && v.endsWith('"'))) return v.slice(1, -1);
+            if (v !== '' && !isNaN(Number(v))) return Number(v);
+            if (/^(true|false)$/i.test(v)) return v.toLowerCase() === 'true';
+            return v;
+        }
+
+        function dbMatch(row, cond) {
+            const a = row[cond.field];
+            const b = cond.value;
+            switch (cond.op) {
+                case '=': return String(a).toLowerCase() === String(b).toLowerCase();
+                case '!=': case '<>': return String(a).toLowerCase() !== String(b).toLowerCase();
+                case '<': return Number(a) < Number(b);
+                case '>': return Number(a) > Number(b);
+                case '<=': return Number(a) <= Number(b);
+                case '>=': return Number(a) >= Number(b);
+                case 'like': {
+                    const re = new RegExp('^' + String(b).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/%/g, '.*').replace(/_/g, '.') + '$', 'i');
+                    return re.test(String(a ?? ''));
+                }
+            }
+            return false;
+        }
+
+        async function dbRunQuery() {
+            const out = document.getElementById('discord-sql-result');
+            const sql = (document.getElementById('discord-sql-input')?.value || '').trim().replace(/;+\s*$/, '');
+            const esc = t => String(t ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+            const fail = m => { out.innerHTML = `<p class="p-3 text-red-600 font-semibold">${esc(m)}</p>`; };
+            if (!dbReady()) { fail("Save a Bot Token and a Database Channel ID first."); return; }
+            const m = /^select\s+(.+?)\s+from\s+(\w+)(?:\s+where\s+(.+?))?(?:\s+order\s+by\s+(\w+)(?:\s+(asc|desc))?)?(?:\s+limit\s+(\d+))?$/i.exec(sql);
+            if (!m) { fail("Unsupported query. Example: SELECT name, price FROM products WHERE stock < 20 ORDER BY price DESC LIMIT 10"); return; }
+            const [, colsRaw, table, whereRaw, orderBy, dir, limit] = m;
+            if (!DB_TABLES.includes(table.toLowerCase())) { fail("Unknown table. Use: products, staff, members, transactions, sessions, discounts."); return; }
+
+            if (!dbChannelFor(table.toLowerCase())) { fail("No Discord channel is set for table '" + table + "'."); return; }
+            const conds = [];
+            if (whereRaw) {
+                for (const part of whereRaw.split(/\s+and\s+/i)) {
+                    const c = /^(\w+)\s*(<=|>=|<>|!=|=|<|>|like)\s*(.+)$/i.exec(part.trim());
+                    if (!c) { fail("Could not parse WHERE condition: " + part); return; }
+                    conds.push({ field: c[1], op: c[2].toLowerCase(), value: dbCoerce(c[3]) });
+                }
+            }
+            out.innerHTML = '<p class="p-3 text-slate-500">Reading from Discord…</p>';
+            try {
+                let rows = (await dbFetchAll([dbChannelFor(table.toLowerCase())])).filter(d => d.table === table.toLowerCase()).map(d => {
+                    const r = Object.assign({}, d.row);
+                    if (Array.isArray(r.items)) r.items = r.items.map(i => Array.isArray(i) ? `${i[1]}x ${i[0]}` : i).join('; ');
+                    delete r.photo; delete r.photoLocalOnly;
+                    return r;
+                });
+                rows = rows.filter(r => conds.every(c => dbMatch(r, c)));
+                if (orderBy) {
+                    const d = (dir || 'asc').toLowerCase() === 'desc' ? -1 : 1;
+                    rows.sort((x, y) => {
+                        const a = x[orderBy], b = y[orderBy];
+                        return (typeof a === 'number' && typeof b === 'number' ? a - b : String(a ?? '').localeCompare(String(b ?? ''))) * d;
+                    });
+                }
+                if (/^count\(\*\)$/i.test(colsRaw.trim())) {
+                    out.innerHTML = `<table class="w-full text-left"><thead class="bg-slate-100 font-bold"><tr><th class="p-2">count</th></tr></thead><tbody><tr><td class="p-2 font-mono">${rows.length}</td></tr></tbody></table>`;
+                    return;
+                }
+                const total = rows.length;
+                rows = rows.slice(0, limit ? parseInt(limit) : 200);
+                const cols = colsRaw.trim() === '*' ? [...new Set(rows.flatMap(r => Object.keys(r)))] : colsRaw.split(',').map(c => c.trim());
+                if (!rows.length) { out.innerHTML = '<p class="p-3 text-slate-400">0 rows.</p>'; return; }
+                out.innerHTML = `<table class="w-full text-left"><thead class="bg-slate-100 font-bold sticky top-0"><tr>${cols.map(c => `<th class="p-2">${esc(c)}</th>`).join('')}</tr></thead><tbody class="divide-y divide-slate-200">` +
+                    rows.map(r => `<tr class="hover:bg-white">${cols.map(c => `<td class="p-2 font-mono">${esc(r[c])}</td>`).join('')}</tr>`).join('') +
+                    `</tbody></table><p class="p-2 text-[10px] text-slate-400">${rows.length} of ${total} row(s)</p>`;
+            } catch (err) { fail("Query failed: " + err.message); }
+        }
+
+
+        // ---- Restore a full backup directly from Discord (via bot) ----
+        function dcBackupChannel() {
+            const c = ((discordSettings.backupChannelId || '') || discordSettings.channelId || '').trim();
+            return /^\d{5,25}$/.test(c) ? c : '';
+        }
+
+        async function findDiscordBackups(max) {
+            const ch = dcBackupChannel();
+            if (!discordSettings.botToken || !ch) throw new Error("Save a Bot Token and a Backup Channel ID first.");
+            const found = [];
+            let before = null;
+            for (let page = 0; page < 5 && found.length < max; page++) {
+                const msgs = await dbRequest('GET', `/channels/${ch}/messages?limit=100` + (before ? `&before=${before}` : ''));
+                if (!msgs || !msgs.length) break;
+                msgs.forEach(m => {
+                    (m.attachments || []).forEach(a => {
+                        if (/^full-backup-.*\.json$/i.test(a.filename || '')) {
+                            found.push({ messageId: m.id, filename: a.filename, url: a.url, size: a.size || 0, time: m.timestamp,
+                                summary: ((m.embeds && m.embeds[0] && m.embeds[0].fields) || []).map(f => `${f.name}: ${f.value}`).join(' • ') });
+                        }
+                    });
+                });
+                before = msgs[msgs.length - 1].id;
+                if (msgs.length < 100) break;
+            }
+            return found.slice(0, max);
+        }
+
+        async function restoreFromDiscordBackup(url, filename) {
+            let data;
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                data = await res.json();
+            } catch (err) {
+                logDiscord('Restore from Discord', false, err.message);
+                if (confirm("Could not download the backup directly (" + err.message + ").\n\nOpen it in a new tab so you can save it, then use \"Restore Full Backup...\" with the file?")) window.open(url, '_blank');
+                return;
+            }
+            if (!data || data.app !== 'TodaMaxTipid Gold POS') { alert("That file is not a TodaMaxTipid Gold backup."); return; }
+            logDiscord('Restore from Discord', true, 'Loaded ' + (filename || 'backup') + ' from Discord.');
+            applyBackupData(data);   // asks for confirmation and only adds missing records
+        }
+
+        async function restoreLatestFromDiscord() {
+            try {
+                const list = await findDiscordBackups(1);
+                if (!list.length) { alert("No backups were found in the backup channel.\n\nIf backups were posted by a webhook, turn on Message Content Intent for the bot in the Discord Developer Portal, or make a new backup after saving the Backup Channel ID."); return; }
+                await restoreFromDiscordBackup(list[0].url, list[0].filename);
+            } catch (err) {
+                logDiscord('Restore from Discord', false, err.message);
+                alert("❌ " + err.message);
+            }
+        }
+
+        let discordBackupCache = [];
+        async function browseDiscordBackups() {
+            const box = document.getElementById('discord-backup-list');
+            if (!box) return;
+            const esc = t => String(t ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+            box.innerHTML = '<p class="text-[11px] text-slate-500">Reading backups from Discord…</p>';
+            try {
+                discordBackupCache = await findDiscordBackups(10);
+                if (!discordBackupCache.length) {
+                    box.innerHTML = '<p class="text-[11px] text-slate-500">No backups found in that channel. (Webhook-posted backups are only visible if the bot has Message Content Intent enabled.)</p>';
+                    return;
+                }
+                box.innerHTML = discordBackupCache.map((b, i) => `
+                    <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex flex-wrap items-center justify-between gap-2">
+                        <div class="min-w-0">
+                            <p class="font-bold text-slate-800 text-[11px]">${esc(new Date(b.time).toLocaleString())} <span class="font-mono text-slate-400 font-normal">${esc(b.filename)} (${Math.round(b.size / 1024)} KB)</span></p>
+                            <p class="text-[10px] text-slate-500 break-words">${esc(b.summary)}</p>
+                        </div>
+                        <button type="button" onclick="restoreFromDiscordBackup(discordBackupCache[${i}].url, discordBackupCache[${i}].filename)" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[11px] flex items-center gap-1.5"><i class="fa-solid fa-rotate-left"></i> Restore</button>
+                    </div>`).join('');
+            } catch (err) {
+                box.innerHTML = `<p class="text-[11px] text-red-600 font-semibold">${esc(err.message)}</p>`;
+            }
+        }
+
+        async function verifyDiscordBot() {
+            const f = readDiscordForm();
+            if (!f.botToken) { alert("Enter a bot token first."); return; }
+            try {
+                const r = await fetch(dcApi() + '/users/@me', { headers: { 'Authorization': 'Bot ' + f.botToken } });
+                if (!r.ok) throw new Error('HTTP ' + r.status + (r.status === 401 ? ' (invalid token)' : ''));
+                const j = await r.json();
+                logDiscord('Bot Verify', true, `Authenticated as ${j.username}`);
+                alert(`✅ Bot token is valid: ${j.username}`);
+            } catch (err) {
+                logDiscord('Bot Verify', false, err.message);
+                alert("❌ Bot verification failed: " + err.message);
+            }
         }
 
         function playScanBeep() {
@@ -1912,6 +3070,7 @@
                     time: new Date().toLocaleString()
                 });
                 persistData();
+                sendDiscordShiftEvent('login', "Username & Password");
                 initAuthenticatedApp();
             } else {
                 if(errBox) {
@@ -1965,6 +3124,7 @@
                     time: new Date().toLocaleString()
                 });
                 persistData();
+                sendDiscordShiftEvent('logout');
             }
 
             currentRole = null;
@@ -2011,6 +3171,7 @@
             if (tabId === 'qrgen') loadProductIntoGenerator();
             if (tabId === 'ai') runAIPredictions();
             if (tabId === 'analytics') updateAnalyticsDashboard();
+            if (tabId === 'discord') renderDiscordSettingsForm();
         }
 
         function renderCashierStaffList() {
@@ -2173,6 +3334,10 @@
             }
 
             persistData();
+            sendDiscordChangeEvent(editId ? '📝 Cashier Staff Updated' : '🆕 Cashier Staff Registered', [
+                { name: 'Name', value: dcTrunc(name, 100), inline: true }, { name: 'Employee ID', value: id, inline: true },
+                { name: 'Username', value: username, inline: true }, { name: 'Shift', value: shift, inline: true },
+                { name: 'Contact', value: phone, inline: true }, { name: 'Date Hired', value: hired || 'N/A', inline: true }], 0x3b82f6);
             closeCashierStaffModal();
             renderCashierStaffList();
             selectCashierForCard(id);
@@ -2181,7 +3346,9 @@
 
         function deleteCashierStaff(id) {
             if (confirm("Are you sure you want to delete this cashier? They will no longer be able to log in.")) {
+                const delC = cashierStaffList.find(c => c.id === id);
                 cashierStaffList = cashierStaffList.filter(c => c.id !== id);
+                if (delC) sendDiscordChangeEvent('🗑️ Cashier Staff Deleted', [{ name: 'Name', value: dcTrunc(delC.name, 100), inline: true }, { name: 'Employee ID', value: delC.id, inline: true }], 0xef4444);
                 persistData();
                 renderCashierStaffList();
             }
@@ -2404,6 +3571,7 @@
             const address = document.getElementById('modal-member-address').value.trim();
 
             loyaltyMembers.push({ id, name, phone, address, photo, points: 0 });
+            sendDiscordChangeEvent('🎟️ Perks Member Registered', [{ name: 'Name', value: dcTrunc(name, 100), inline: true }, { name: 'Card ID', value: id, inline: true }, { name: 'Contact', value: phone, inline: true }, { name: 'Address', value: dcTrunc(address, 200), inline: true }], 0xF1C40F);
             persistData();
             closeLoyaltyMemberModal();
             renderLoyaltyMembersList();
@@ -2413,7 +3581,9 @@
 
         function deleteLoyaltyMember(id) {
             if (confirm("Are you sure you want to delete this member from the loyalty registry?")) {
+                const delM = loyaltyMembers.find(m => m.id === id);
                 loyaltyMembers = loyaltyMembers.filter(m => m.id !== id);
+                if (delM) sendDiscordChangeEvent('🗑️ Perks Member Deleted', [{ name: 'Name', value: dcTrunc(delM.name, 100), inline: true }, { name: 'Card ID', value: delM.id, inline: true }], 0xef4444);
                 persistData();
                 renderLoyaltyMembersList();
             }
@@ -2782,11 +3952,14 @@
 
             let itemsSummaryStr = [];
             let itemsSnapshot = [];
+            const lowStockCrossed = [];
             cart.forEach(cartItem => {
                 const prod = products.find(p => p.id === cartItem.id);
                 if (prod) {
                     salesData.categoryTotals[prod.category] = (salesData.categoryTotals[prod.category] || 0) + (prod.price * cartItem.qty);
+                    const prevStock = prod.stock;
                     prod.stock = Math.max(0, prod.stock - cartItem.qty);
+                    if (didCrossLowStock(prevStock, prod.stock)) lowStockCrossed.push(prod);
                     
                     if (!salesData.productSalesHistory[prod.id]) {
                         salesData.productSalesHistory[prod.id] = { name: prod.name, category: prod.category, qty: 0, revenue: 0 };
@@ -2828,6 +4001,9 @@
 
             salesData.ledger.unshift(receiptRecord);
             persistData();
+
+            sendDiscordCheckoutEvent(receiptRecord);
+            if (lowStockCrossed.length) sendDiscordLowStockEvent(lowStockCrossed, "POS checkout " + invNo);
 
             viewReceiptDetails(invNo);
 
@@ -3096,8 +4272,10 @@
         function quickAdjustStock(id, delta) {
             const p = products.find(prod => prod.id === id);
             if (p) {
+                const prevStock = p.stock;
                 p.stock = Math.max(0, p.stock + delta);
                 persistData();
+                if (didCrossLowStock(prevStock, p.stock)) sendDiscordLowStockEvent([p], "Manual stock adjustment");
                 renderInventoryTable();
                 renderStockViewTable();
                 updateNotificationBadge();
@@ -3107,8 +4285,10 @@
         function directUpdateStock(id, val) {
             const p = products.find(prod => prod.id === id);
             if (p) {
+                const prevStock = p.stock;
                 p.stock = Math.max(0, parseInt(val) || 0);
                 persistData();
+                if (didCrossLowStock(prevStock, p.stock)) sendDiscordLowStockEvent([p], "Manual stock update");
                 renderInventoryTable();
                 renderStockViewTable();
                 updateNotificationBadge();
@@ -3188,6 +4368,10 @@
             }
 
             persistData();
+            sendDiscordChangeEvent(id ? '📝 Product Updated' : '🆕 Product Added', [
+                { name: 'Product', value: dcTrunc(name, 200) }, { name: 'Category', value: category, inline: true },
+                { name: 'Price', value: dcPeso(price), inline: true }, { name: 'Stock', value: String(stock), inline: true },
+                { name: 'Barcode', value: '`' + barcode + '`', inline: true }], 0x006837);
             closeProductModal();
             renderInventoryTable();
             renderStockViewTable();
@@ -3198,8 +4382,10 @@
 
         function deleteProduct(id) {
             if (confirm("Are you sure you want to delete this product from inventory?")) {
+                const delP = products.find(p => p.id === id);
                 products = products.filter(p => p.id !== id);
                 persistData();
+                if (delP) sendDiscordChangeEvent('🗑️ Product Deleted', [{ name: 'Product', value: dcTrunc(delP.name, 200) }, { name: 'Barcode', value: '`' + delP.barcode + '`', inline: true }], 0xef4444);
                 renderInventoryTable();
                 renderStockViewTable();
                 renderQRProductSelector();
@@ -3370,7 +4556,9 @@
         }
 
         function autoRestockAllLow() {
+            const restockedNames = products.filter(p => p.stock < 25).map(p => p.name);
             products.forEach(p => { if (p.stock < 25) p.stock += 50; });
+            if (restockedNames.length) sendDiscordChangeEvent('📦 AI Auto-Restock (+50 each)', [{ name: restockedNames.length + ' item(s)', value: dcTrunc(restockedNames.map(n => '• ' + n).join('\n'), 1024) }], 0x008a48);
             persistData();
             alert("Neural Auto-Restock Complete! Low inventory items topped up by AI suggested quantities (+50 units).");
             runAIPredictions();
@@ -3384,6 +4572,7 @@
             if (p) {
                 p.stock += qty;
                 persistData();
+                sendDiscordChangeEvent('📦 Item Restocked', [{ name: 'Product', value: dcTrunc(p.name, 200) }, { name: 'Added', value: '+' + qty, inline: true }, { name: 'New Stock', value: String(p.stock), inline: true }], 0x008a48);
                 runAIPredictions();
                 renderInventoryTable();
                 renderStockViewTable();
