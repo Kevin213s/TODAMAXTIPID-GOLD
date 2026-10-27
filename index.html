@@ -1249,7 +1249,7 @@
 
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3 text-xs">
                     <h3 class="font-bold text-xs uppercase tracking-wider text-slate-700 border-b border-slate-200 pb-3 flex items-center gap-2">
-                        <i class="fa-solid fa-database text-puregold-green"></i> Full Data Backup (Discord Database)
+                        <i class="fa-solid fa-database text-puregold-green"></i> Full Data Backup (Discord Database) (work in progress)
                     </h3>
                     <p class="text-slate-500 leading-relaxed">Everything is saved in this browser automatically. Use these buttons to also keep a full off-device copy in your Discord channel: <b>all transactions and sales analytics, product inventory &amp; stock, cashier staff, Perks members and shift logs</b> (one .json file plus .csv sheets). Passwords and Discord secrets are never included.</p>
                     <div class="flex flex-wrap gap-2">
@@ -1292,10 +1292,6 @@
                             <label class="text-[10px] font-semibold text-slate-600">#audit → <b>sessions</b> (shift logs)<input type="text" id="discord-dbch-sessions" class="mt-0.5 w-full p-2 bg-white border border-slate-300 rounded-lg font-mono text-[10px]" placeholder="channel ID"></label>
                             <label class="text-[10px] font-semibold text-slate-600">#discounts → <b>discounts</b> (sales with discounts/points)<input type="text" id="discord-dbch-discounts" class="mt-0.5 w-full p-2 bg-white border border-slate-300 rounded-lg font-mono text-[10px]" placeholder="channel ID"></label>
                         </div>
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1 uppercase tracking-wider text-[10px]">API Base URL (optional proxy, only if direct Discord calls are blocked)</label>
-                        <input type="text" id="discord-api-base" autocomplete="off" class="w-full p-2.5 bg-slate-50 border border-slate-300 text-slate-800 rounded-xl font-mono text-[11px] focus:outline-none focus:ring-2 focus:ring-puregold-green" placeholder="Leave blank, or e.g. https://discord-proxy.yourname.workers.dev/api/v10">
                     </div>
                     <p class="text-[10px] text-slate-400">Save the settings above first, then use the buttons below. Auto-sync only turns on after you have run one manual Sync or Load on this browser.</p>
                     <div class="flex flex-wrap gap-2">
@@ -2029,13 +2025,11 @@
         const DISCORD_WEBHOOK_RE = /^https:\/\/(?:(?:canary|ptb)\.)?(?:discord|discordapp)\.com\/api(?:\/v\d+)?\/webhooks\/\d+\/[\w-]+(?:\?.*)?$/i;
         let discordSettings = {
             webhookUrl: '', botToken: '', channelId: '',
-            evtCheckout: true, evtLowStock: true, evtShift: true, evtChanges: true, autoBackup: false, dbChannelId: '', backupChannelId: '', apiBase: '', dbAutoSync: false,
+            evtCheckout: true, evtLowStock: true, evtShift: true, evtChanges: true, autoBackup: false, dbChannelId: '', backupChannelId: '', dbAutoSync: false,
             routes: { checkout: '', lowstock: '', shift: '', changes: '', backup: '' },
             dbChannels: { products: '', staff: '', members: '', transactions: '', sessions: '', discounts: '' },
             lowThreshold: 15
         };
-        // Discord REST base. Default is Discord itself; set a proxy URL in settings if the browser blocks direct calls (CORS).
-        function dcApi() { return ((discordSettings.apiBase || '').replace(/\/+$/, '')) || 'https://discord.com/api/v10'; }
         const DC_ROUTE_KEYS = ['checkout', 'lowstock', 'shift', 'changes', 'backup'];
         // Picks the webhook for an event: its own destination first, then the default webhook.
         function dcHookFor(route) {
@@ -2068,7 +2062,6 @@
                     autoBackup: o.autoBackup === true,
                     dbChannelId: o.dbChannelId || '',
                     backupChannelId: o.backupChannelId || '',
-                    apiBase: o.apiBase || '',
                     dbAutoSync: o.dbAutoSync === true,
                     routes: Object.assign({ checkout: '', lowstock: '', shift: '', changes: '', backup: '' },
                         Object.fromEntries(Object.entries(o.routes || {}).map(([k, v]) => [k, dcDecode(v)]))),
@@ -2091,7 +2084,6 @@
                     autoBackup: discordSettings.autoBackup,
                     dbChannelId: discordSettings.dbChannelId,
                     backupChannelId: discordSettings.backupChannelId,
-                    apiBase: discordSettings.apiBase,
                     dbAutoSync: discordSettings.dbAutoSync,
                     routes: Object.fromEntries(Object.entries(discordSettings.routes).map(([k, v]) => [k, dcEncode(v)])),
                     dbChannels: discordSettings.dbChannels,
@@ -2133,7 +2125,6 @@
             chk('discord-auto-backup', discordSettings.autoBackup);
             set('discord-db-channel', discordSettings.dbChannelId);
             set('discord-backup-channel', discordSettings.backupChannelId);
-            set('discord-api-base', discordSettings.apiBase);
             chk('discord-db-autosync', discordSettings.dbAutoSync);
             DC_ROUTE_KEYS.forEach(k => set('discord-route-' + k, discordSettings.routes[k] || ''));
             DB_TABLES.forEach(t => set('discord-dbch-' + t, (discordSettings.dbChannels || {})[t] || ''));
@@ -2163,7 +2154,6 @@
                 autoBackup: c('discord-auto-backup'),
                 dbChannelId: v('discord-db-channel'),
                 backupChannelId: v('discord-backup-channel'),
-                apiBase: v('discord-api-base').replace(/\/+$/, ''),
                 dbAutoSync: c('discord-db-autosync'),
                 routes: Object.fromEntries(DC_ROUTE_KEYS.map(k => [k, v('discord-route-' + k)])),
                 dbChannels: Object.fromEntries(DB_TABLES.map(t => [t, v('discord-dbch-' + t)])),
@@ -2184,7 +2174,6 @@
             for (const k of DC_ROUTE_KEYS) {
                 if (f.routes[k] && !DISCORD_WEBHOOK_RE.test(f.routes[k])) { alert("Invalid webhook URL in the '" + k + "' destination."); return; }
             }
-            if (f.apiBase && !/^https:\/\/[^\s]+$/i.test(f.apiBase)) { alert("API Base URL must start with https://"); return; }
             if (f.backupChannelId && !/^\d{5,25}$/.test(f.backupChannelId)) {
                 alert("Backup Channel ID must be numeric.");
                 return;
@@ -2206,7 +2195,7 @@
         function clearDiscordSettings() {
             if (!confirm("Remove the saved Discord webhook, bot token and settings from this browser?")) return;
             try { localStorage.removeItem(DISCORD_STORAGE_KEY); } catch(e) {}
-            discordSettings = { webhookUrl: '', botToken: '', channelId: '', evtCheckout: true, evtLowStock: true, evtShift: true, evtChanges: true, autoBackup: false, dbChannelId: '', backupChannelId: '', apiBase: '', dbAutoSync: false, routes: { checkout: '', lowstock: '', shift: '', changes: '', backup: '' }, dbChannels: { products: '', staff: '', members: '', transactions: '', sessions: '', discounts: '' }, lowThreshold: 15 };
+            discordSettings = { webhookUrl: '', botToken: '', channelId: '', evtCheckout: true, evtLowStock: true, evtShift: true, evtChanges: true, autoBackup: false, dbChannelId: '', backupChannelId: '', dbAutoSync: false, routes: { checkout: '', lowstock: '', shift: '', changes: '', backup: '' }, dbChannels: { products: '', staff: '', members: '', transactions: '', sessions: '', discounts: '' }, lowThreshold: 15 };
             renderDiscordSettingsForm();
         }
 
@@ -2261,7 +2250,7 @@
                         const url = hook + (hook.includes('?') ? '&' : '?') + 'wait=true';
                         res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
                     } else {
-                        res = await fetch(`${dcApi()}/channels/${discordSettings.channelId}/messages`, {
+                        res = await fetch(`https://discord.com/api/v10/channels/${discordSettings.channelId}/messages`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + discordSettings.botToken },
                             body: JSON.stringify({ embeds: body.embeds, allowed_mentions: body.allowed_mentions })
@@ -2496,7 +2485,7 @@
                 if (bHook) {
                     res = await fetch(bHook + (bHook.includes('?') ? '&' : '?') + 'wait=true', { method: 'POST', body: form });
                 } else {
-                    res = await fetch(`${dcApi()}/channels/${bCh || discordSettings.channelId}/messages`, { method: 'POST', headers: { 'Authorization': 'Bot ' + discordSettings.botToken }, body: form });
+                    res = await fetch(`https://discord.com/api/v10/channels/${bCh || discordSettings.channelId}/messages`, { method: 'POST', headers: { 'Authorization': 'Bot ' + discordSettings.botToken }, body: form });
                 }
                 if (!res.ok) {
                     let m = 'HTTP ' + res.status;
@@ -2609,12 +2598,7 @@
                 dbLastCall = Date.now();
                 const headers = { 'Authorization': 'Bot ' + discordSettings.botToken };
                 if (body) headers['Content-Type'] = 'application/json';
-                let res;
-                try {
-                    res = await fetch(dcApi() + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
-                } catch (netErr) {
-                    throw new Error("Could not reach the Discord API from this page (network error or the browser blocked it with CORS). If you opened this file directly or your network blocks Discord, set an API Base URL (proxy) in the Discord Database card. Details: " + netErr.message);
-                }
+                const res = await fetch('https://discord.com/api/v10' + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
                 if (res.status === 429) {
                     let w = 1500;
                     try { w = Math.ceil(((await res.json()).retry_after || 1.5) * 1000); } catch(e) {}
@@ -2625,8 +2609,7 @@
                 if (!res.ok) {
                     let m = 'HTTP ' + res.status;
                     try { const j = await res.json(); m += ': ' + (j.message || ''); } catch(e) {}
-                    const hints = { 401: ' → the Bot Token is wrong or was reset.', 403: ' → the bot is missing permission in that channel (needs View Channel, Send Messages, Read Message History) or is not in that server.', 404: ' → wrong channel ID, or the bot has not been invited to that server.' };
-                    throw new Error(m + (hints[res.status] || ''));
+                    throw new Error(m);
                 }
                 return await res.json();
             }
@@ -3002,7 +2985,7 @@
             const f = readDiscordForm();
             if (!f.botToken) { alert("Enter a bot token first."); return; }
             try {
-                const r = await fetch(dcApi() + '/users/@me', { headers: { 'Authorization': 'Bot ' + f.botToken } });
+                const r = await fetch('https://discord.com/api/v10/users/@me', { headers: { 'Authorization': 'Bot ' + f.botToken } });
                 if (!r.ok) throw new Error('HTTP ' + r.status + (r.status === 401 ? ' (invalid token)' : ''));
                 const j = await r.json();
                 logDiscord('Bot Verify', true, `Authenticated as ${j.username}`);
