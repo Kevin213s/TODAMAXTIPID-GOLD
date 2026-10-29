@@ -359,7 +359,7 @@
     <!-- MAIN APP CONTAINER -->
     <main class="flex-1 relative overflow-hidden bg-slate-100">
 
-        <!-- TAB 1: POS COUNTER (CLEANED OF CLEAR CART, VOID, RETURNS) -->
+        <!-- TAB 1: POS COUNTER -->
         <section id="tab-pos" class="tab-content cashier-only h-full p-2 lg:p-3 flex flex-col overflow-hidden">
             <div class="w-full h-full flex flex-col bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
                 <div class="bg-slate-50 px-4 py-2.5 flex justify-between items-center border-b border-slate-200 flex-shrink-0">
@@ -2301,6 +2301,8 @@
                     <p class="text-[9px] font-extrabold uppercase text-slate-400 tracking-wider">Live Barcode Preview</p>
                     <canvas id="modal-barcode-preview" class="max-w-full"></canvas>
                 </div>
+                
+                <!-- REMOVED THE BROKEN SCRIPT HERE -->
 
                 <div class="pt-4 border-t border-slate-200 flex justify-end gap-2.5">
                     <button type="button" onclick="closeProductModal()" class="px-5 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl transition hover:bg-slate-200">Cancel</button>
@@ -2362,12 +2364,10 @@
     <!-- APPLICATION LOGIC SCRIPT -->
     <script>
         function fillLogin(user, pass) {
-            // Demo quick-access: fill fields only — user must click "Login to System"
             const uEl = document.getElementById('login-username');
             const pEl = document.getElementById('login-password');
             if (uEl) uEl.value = user;
             if (pEl) pEl.value = pass;
-            // Ensure manual login form is visible
             try { switchLoginMode('manual'); } catch (e) {}
             if (pEl) pEl.focus();
         }
@@ -2409,7 +2409,6 @@
             if (b) b.className = mode === 'barcode' ? active : idle;
             if (q) q.className = mode === 'qr' ? active : idle;
             if (both) both.className = mode === 'both' ? active : idle;
-            // restart camera if open
             const container = document.getElementById('login-reader-container');
             if (container && !container.classList.contains('hidden')) {
                 stopLoginCameraScanner();
@@ -2463,7 +2462,6 @@
                         const side = Math.floor(Math.min(w, h) * 0.65);
                         return { width: Math.max(140, side), height: Math.max(140, side) };
                     }
-                    // barcode / both → wide rectangle (pahiga)
                     const width = Math.floor(w * 0.90);
                     const height = Math.floor(Math.min(h * 0.30, width * 0.30));
                     return {
@@ -2542,7 +2540,6 @@
             const codeLower = code.toLowerCase();
             const codeDigits = code.replace(/\D/g, '');
 
-            // --- ADMIN ID barcode (ADM-xxx) or username barcode ---
             if (adminProfile) {
                 const adminId = String(adminProfile.id || '').toLowerCase();
                 const adminUser = String(adminProfile.username || '').toLowerCase();
@@ -2563,7 +2560,6 @@
                 }
             }
 
-            // --- CASHIER / STAFF ID barcode (EMP-xxx) ---
             if (!Array.isArray(cashierStaffList)) cashierStaffList = [];
             const cashierMatch = cashierStaffList.find(c => {
                 if (!c) return false;
@@ -2602,8 +2598,6 @@
             if (errBox) errBox.classList.remove('hidden');
             if (errMsg) errMsg.innerText = 'ID barcode [' + code + '] not found. Scan Admin ID (e.g. ADM-001) or Cashier ID (e.g. EMP-001).';
         }
-
-        
 
         let currentRole = null;
         let currentUser = null;
@@ -2707,9 +2701,7 @@
             { id: "PERKS-882311", name: "Juan Dela Cruz", phone: "0918-987-6543", address: "Makati City", photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150", points: 120 }
         ];
 
-        // Preloaded sample/mock inventory data with diverse statuses (active, damaged, expired, low stock)
         let products = [
-            // --- Grocery (original + more) ---
             { id: 1, name: "San Marino Tuna Flakes in Oil 155g", category: "Grocery", price: 38.50, stock: 45, barcode: "4800012001015", status: "active" },
             { id: 2, name: "Century Tuna Flakes Hot & Spicy 155g", category: "Grocery", price: 41.00, stock: 8, barcode: "4800012001022", status: "low" },
             { id: 3, name: "Lucky Me Pancit Canton Original 60g", category: "Grocery", price: 15.00, stock: 0, barcode: "4800012001039", status: "low" },
@@ -2723,37 +2715,31 @@
             { id: 11, name: "Magnolia Fresh Milk 1L", category: "Grocery", price: 92.00, stock: 28, barcode: "4800012001114", status: "active" },
             { id: 12, name: "Eden Cheese 165g", category: "Grocery", price: 58.00, stock: 22, barcode: "4800012001121", status: "active" },
             { id: 13, name: "CDO Meatloaf 150g", category: "Grocery", price: 32.50, stock: 18, barcode: "4800012001138", status: "active" },
-            // --- Beverages ---
             { id: 14, name: "Coca-Cola 1.5L", category: "Beverages", price: 65.00, stock: 40, barcode: "4800013002015", status: "active" },
             { id: 15, name: "Sprite 1.5L", category: "Beverages", price: 62.00, stock: 35, barcode: "4800013002022", status: "active" },
             { id: 16, name: "C2 Green Tea Apple 1L", category: "Beverages", price: 38.00, stock: 50, barcode: "4800013002039", status: "active" },
             { id: 17, name: "Wilkins Distilled Water 1L", category: "Beverages", price: 20.00, stock: 60, barcode: "4800013002046", status: "active" },
             { id: 18, name: "Kopiko Brown Coffee 10s", category: "Beverages", price: 55.00, stock: 9, barcode: "4800013002053", status: "low" },
             { id: 19, name: "Nescafe Classic 50g", category: "Beverages", price: 48.00, stock: 0, barcode: "4800013002060", status: "low" },
-            // --- Snacks ---
             { id: 20, name: "Piattos Cheese 85g", category: "Snacks", price: 42.00, stock: 33, barcode: "4800014003015", status: "active" },
             { id: 21, name: "Chippy BBQ 110g", category: "Snacks", price: 28.00, stock: 45, barcode: "4800014003022", status: "active" },
             { id: 22, name: "Oishi Prawn Crackers 60g", category: "Snacks", price: 18.00, stock: 7, barcode: "4800014003039", status: "low" },
             { id: 23, name: "Nova Country Cheddar 78g", category: "Snacks", price: 35.00, stock: 20, barcode: "4800014003046", status: "active" },
             { id: 24, name: "Rebisco Crackers 10s", category: "Snacks", price: 12.00, stock: 55, barcode: "4800014003053", status: "active" },
-            // --- Personal Care ---
             { id: 25, name: "Safeguard White 135g", category: "Personal Care", price: 42.00, stock: 30, barcode: "4800015004015", status: "active" },
             { id: 26, name: "Colgate Great Regular 150ml", category: "Personal Care", price: 78.00, stock: 25, barcode: "4800015004022", status: "active" },
             { id: 27, name: "Head & Shoulders 180ml", category: "Personal Care", price: 165.00, stock: 14, barcode: "4800015004039", status: "low" },
             { id: 28, name: "Dove Beauty Bar 90g", category: "Personal Care", price: 48.00, stock: 22, barcode: "4800015004046", status: "active" },
-            // --- Household ---
             { id: 29, name: "Joy Dishwashing Liquid 495ml", category: "Household", price: 68.00, stock: 27, barcode: "4800016005015", status: "active" },
             { id: 30, name: "Downy Garden Bloom 1L", category: "Household", price: 145.00, stock: 16, barcode: "4800016005022", status: "active" },
             { id: 31, name: "Zonrox Bleach 1L", category: "Household", price: 52.00, stock: 20, barcode: "4800016005039", status: "active" },
             { id: 32, name: "Ariel Powder Detergent 1kg", category: "Household", price: 175.00, stock: 11, barcode: "4800016005046", status: "low" },
-            // --- Fresh Produce ---
             { id: 33, name: "Banana Lakatan (1kg)", category: "Fresh Produce", price: 85.00, stock: 24, barcode: "4800017006015", status: "active" },
             { id: 34, name: "Tomato (500g)", category: "Fresh Produce", price: 45.00, stock: 18, barcode: "4800017006022", status: "active" },
             { id: 35, name: "Egg Tray (12pcs)", category: "Fresh Produce", price: 95.00, stock: 30, barcode: "4800017006039", status: "active" },
             { id: 36, name: "Potato (1kg)", category: "Fresh Produce", price: 70.00, stock: 5, barcode: "4800017006046", status: "low" },
             { id: 37, name: "Onion Red (500g)", category: "Fresh Produce", price: 55.00, stock: 0, barcode: "4800017006053", status: "low" },
             { id: 38, name: "Garlic (250g)", category: "Fresh Produce", price: 48.00, stock: 15, barcode: "4800017006060", status: "active" },
-            // Extra Grocery staples
             { id: 39, name: "Nissin Cup Noodles Seafood", category: "Grocery", price: 28.00, stock: 40, barcode: "4800012001145", status: "active" },
             { id: 40, name: "Bear Brand Powdered Milk 300g", category: "Grocery", price: 125.00, stock: 19, barcode: "4800012001152", status: "active" }
         ];
@@ -2769,7 +2755,6 @@
                     try {
                         const p = JSON.parse(savedProducts);
                         if (Array.isArray(p) && p.length) {
-                            // Merge: keep saved items, append any default products with new ids not already present
                             const existingIds = new Set(p.map(x => x.id));
                             const existingBarcodes = new Set(p.map(x => x.barcode));
                             const defaults = products.slice();
@@ -2793,7 +2778,6 @@
                         }
                     } catch(e) {}
                 }
-                // Guarantee demo admin can always log in
                 if (!adminProfile || !adminProfile.username || !adminProfile.password) {
                     adminProfile = {
                         name: "ADMINISTRATOR", id: "ADM-001",
@@ -2825,6 +2809,11 @@
                 localStorage.setItem('todamax_inv_activity', JSON.stringify(inventoryActivityLog));
             } catch (e) {}
             updateNotificationBadge();
+
+            // Sync to cloud (Firebase)
+            if (typeof window.syncTodamaxDataToCloud === 'function') {
+                window.syncTodamaxDataToCloud();
+            }
         }
 
         function updateNotificationBadge() {
@@ -2833,7 +2822,6 @@
             if(badge) badge.innerText = notifItems.length;
         }
 
-        // Notification panel cleanup: strictly view-only without action buttons
         function openNotificationModal() {
             const notifItems = products.filter(p => p.stock < 15 || p.status === 'damaged' || p.status === 'expired');
             const container = document.getElementById('notification-list-container');
@@ -2884,17 +2872,13 @@
             } catch(e) {}
         }
 
-
-        // ---- Robust barcode helper (works on hidden elements) ----
         function safeBarcode(target, value, opts) {
             if (!value) value = '0000000000000';
             const defaults = { format: 'CODE128', width: 1.5, height: 40, displayValue: true, fontSize: 12, margin: 4, background: '#ffffff' };
             const options = Object.assign({}, defaults, opts || {});
             try {
-                // Accept CSS selector string or DOM element
                 const el = typeof target === 'string' ? document.querySelector(target) : target;
                 if (!el) return false;
-                // Temporarily unhide ancestors so layout works
                 const hiddenAncestors = [];
                 let node = el;
                 while (node && node !== document.body) {
@@ -2906,7 +2890,6 @@
                     node = node.parentElement;
                 }
                 JsBarcode(el, String(value), options);
-                // Restore
                 hiddenAncestors.forEach(({ node, prev }) => { node.style.display = prev; });
                 return true;
             } catch (e) {
@@ -2916,14 +2899,12 @@
         }
 
         function prepareAndPrint(prepareFn, printTarget) {
-            // printTarget: receipt | shelf | item | report | po | loyalty | employee | admin | barcode
             document.body.setAttribute('data-print', printTarget || '');
             if (typeof prepareFn === 'function') prepareFn();
             setTimeout(() => {
                 window.print();
                 setTimeout(() => {
                     document.body.removeAttribute('data-print');
-                    // Force all print hosts back to hidden on screen
                     [
                         'printable-admin-id-container',
                         'printable-employee-id-container',
@@ -2935,7 +2916,6 @@
                         const el = document.getElementById(id);
                         if (!el) return;
                         if (id.includes('shelf') || id.includes('item')) {
-                            // shelf/item may be visible in label studio — don't force hide those preview ones
                             return;
                         }
                         el.style.display = 'none';
@@ -2962,11 +2942,9 @@
                     return false;
                 }
 
-                // Built-in demo credentials that ALWAYS work (ignore corrupted localStorage)
                 const DEMO_ADMIN_USER = 'admin';
                 const DEMO_ADMIN_PASS = 'admin123';
 
-                // Ensure defaults exist
                 if (typeof adminProfile !== 'object' || adminProfile === null) {
                     adminProfile = {
                         name: "ADMINISTRATOR", id: "ADM-001",
@@ -2983,7 +2961,6 @@
                     ];
                 }
 
-                // --- ADMIN login: accept stored credentials OR built-in demo ---
                 const isDemoAdmin = (u.toLowerCase() === DEMO_ADMIN_USER && p === DEMO_ADMIN_PASS);
                 const isStoredAdmin = (
                     adminProfile.username &&
@@ -2992,7 +2969,6 @@
                 );
 
                 if (isDemoAdmin || isStoredAdmin) {
-                    // If logging in with demo and stored password was changed/corrupt, restore demo password for session
                     if (isDemoAdmin) {
                         adminProfile.username = DEMO_ADMIN_USER;
                         adminProfile.password = DEMO_ADMIN_PASS;
@@ -3013,11 +2989,9 @@
                     return false;
                 }
 
-                // --- CASHIER login ---
                 let cashierMatch = cashierStaffList.find(c =>
                     c && c.username && String(c.username).toLowerCase() === u.toLowerCase() && String(c.password) === p
                 );
-                // Built-in demo cashier fallback
                 if (!cashierMatch && u.toLowerCase() === 'cashier1' && p === 'cashier123') {
                     cashierMatch = {
                         id: "EMP-01", username: "cashier1", password: "cashier123",
@@ -3025,7 +2999,6 @@
                         photo: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
                         role: "POS Cashier #01"
                     };
-                    // ensure in list
                     if (!cashierStaffList.some(c => c.username === 'cashier1')) {
                         cashierStaffList.unshift(cashierMatch);
                     }
@@ -3058,7 +3031,6 @@
                     return false;
                 }
 
-                // Failed
                 if (errBox) errBox.classList.remove('hidden');
                 if (errMsg) errMsg.innerText = 'Invalid username or password. Try admin/admin123 or cashier1/cashier123';
                 return false;
@@ -3078,7 +3050,6 @@
                 loginOverlay.classList.add('hidden');
                 loginOverlay.style.cssText = 'display:none!important;visibility:hidden!important;pointer-events:none!important;opacity:0!important;z-index:-1!important;';
             }
-            // Also force body scroll in case overlay blocked interaction
             try { document.body.style.overflow = ''; } catch (e) {}
             
             try {
@@ -3117,7 +3088,6 @@
                 try { updateNotificationBadge(); } catch (e) { console.warn(e); }
             } catch (err) {
                 console.error('initAuthenticatedApp error:', err);
-                // Overlay already hidden – show a non-blocking warning
                 alert('Logged in, but some UI failed to load: ' + (err && err.message ? err.message : err));
             }
         }
@@ -3144,7 +3114,6 @@
             cart = [];
             activeLoyaltyMember = null;
 
-            // Fully restore login overlay (must clear cssText set during login)
             const loginOverlay = document.getElementById('login-overlay');
             if (loginOverlay) {
                 loginOverlay.classList.remove('hidden');
@@ -3335,7 +3304,6 @@
         function saveAdminProfile(e) {
             e.preventDefault();
             adminProfile.name = document.getElementById('adm-name').value.trim();
-            // Admin ID is system-generated and locked — never overwrite from form
             if (!adminProfile.id) {
                 adminProfile.id = 'ADM-' + String(Math.floor(100 + Math.random() * 900));
             }
@@ -3537,7 +3505,6 @@
             }
         }
 
-        // ---- Void cart (requires admin) ----
         function requestVoidTransaction() {
             if (!cart.length) {
                 alert('Cart is already empty.');
@@ -3549,7 +3516,6 @@
                 const tendered = document.getElementById('cash-tendered');
                 if (tendered) tendered.value = '';
                 renderCart();
-                // Log to cashier sessions
                 if (!salesData.cashierSessions) salesData.cashierSessions = [];
                 salesData.cashierSessions.unshift({
                     empId: currentEmployee.id,
@@ -3564,7 +3530,6 @@
             }, 'VOID TRANSACTION: Clearing the entire cart requires Admin authorization (password or scan Admin ID barcode).');
         }
 
-        // ---- Return / Refund (requires admin) — restore stock from last receipt or manual ----
         function requestReturnTransaction() {
             requireAdminAuthForCashier(() => {
                 openReturnModal();
@@ -3572,13 +3537,11 @@
         }
 
         function openReturnModal() {
-            // Build simple return UI using last few ledger receipts
             const ledger = salesData.ledger || [];
             if (!ledger.length) {
                 alert('No completed transactions available to return.');
                 return;
             }
-            // Prefer a simple prompt flow: pick invoice then restore stock
             const options = ledger.map((r, i) => (i + 1) + '. ' + r.inv + ' — ₱' + r.total.toFixed(2) + ' (' + r.time + ')').join('\n');
             const pick = prompt('Admin-authorized RETURN\n\nSelect receipt number to refund (1-' + ledger.length + '):\n\n' + options);
             if (!pick) return;
@@ -3590,13 +3553,11 @@
             const record = ledger[idx];
             if (!confirm('Process RETURN for ' + record.inv + '\nTotal: ₱' + record.total.toFixed(2) + '\n\nStock will be restored for all items. Continue?')) return;
 
-            // Restore stock
             (record.items || []).forEach(it => {
                 const prod = products.find(p => p.name === it.name);
                 if (prod) prod.stock += it.qty;
             });
 
-            // Mark / log return
             if (!salesData.returns) salesData.returns = [];
             salesData.returns.unshift({
                 originalInv: record.inv,
@@ -3608,7 +3569,6 @@
                 authorizedBy: adminProfile.id
             });
 
-            // Adjust revenue
             salesData.totalRevenue = Math.max(0, (salesData.totalRevenue || 0) - record.total);
             salesData.transactions = Math.max(0, (salesData.transactions || 0) - 1);
 
@@ -3629,7 +3589,6 @@
             alert('Return processed for ' + record.inv + '.\n₱' + record.total.toFixed(2) + ' refunded.\nStock restored.');
         }
 
-        // Cashier security: Modify or remove items from cart requires Admin Authorization
         function updateCartQtyWithAuth(productId, delta) {
             const item = cart.find(i => i.id === productId);
             if (!item) return;
@@ -3643,7 +3602,6 @@
             }
         }
 
-        // ===================== STANDARD POS & INVENTORY FUNCTIONS =====================
         function renderCashierStaffList() {
             const query = (document.getElementById('cashier-staff-search')?.value || '').toLowerCase().trim();
             const container = document.getElementById('cashier-staff-list');
@@ -3715,7 +3673,6 @@
         }
 
 
-        // Unlimited staff ID generators (no max count, collision-safe)
         function nextCashierEmpId() {
             let max = 0;
             (cashierStaffList || []).forEach(c => {
@@ -3798,7 +3755,6 @@
                     cashierStaffList[idx] = { id, username, password, name, phone, address, emergency, shift, photo, role: "POS Cashier" };
                 }
             } else {
-                // Unlimited register — ensure unique id
                 if (cashierStaffList.some(c => c.id === id)) {
                     id = nextCashierEmpId();
                     const idEl = document.getElementById('modal-emp-id');
@@ -3879,7 +3835,6 @@
             const digits = sku.replace(/\D/g, '');
             const skuLower = sku.toLowerCase();
 
-            // Match inventory product barcodes (exact, digit-normalized, or by id)
             const match = (products || []).find(p => {
                 if (!p) return false;
                 const bc = String(p.barcode || '');
@@ -3910,7 +3865,6 @@
                 return;
             }
 
-            // If staff/admin barcode scanned on POS by mistake, show clear message
             if (/^adm-/i.test(sku) || (adminProfile && skuLower === String(adminProfile.id).toLowerCase())) {
                 alert('Admin ID barcode scanned on POS.\nUse this on the Login screen to sign in as Admin.');
                 return;
@@ -4008,7 +3962,6 @@
             let pointsRedeemedVal = 0;
             const redeemChk = document.getElementById('redeem-points-chk');
             if (redeemChk && redeemChk.checked && activeLoyaltyMember) {
-                // 1 point = ₱1; redeem up to available points or remaining total
                 const maxRedeem = Math.min(activeLoyaltyMember.points, Math.max(0, subtotal - discount));
                 pointsRedeemedVal = maxRedeem;
             }
@@ -4070,7 +4023,6 @@
             const discountRate = discountElem ? parseFloat(discountElem.value) || 0 : 0;
             let discount = subtotal * discountRate;
 
-            // Pre-compute points redemption for validation
             let prePointsRedeem = 0;
             const redeemChkPre = document.getElementById('redeem-points-chk');
             if (redeemChkPre && redeemChkPre.checked && activeLoyaltyMember) {
@@ -4099,7 +4051,6 @@
                 }
             });
 
-            // Loyalty points: earn 1 pt per ₱50 spent; redeem if checked
             let pointsEarned = 0;
             let pointsRedeemedVal = 0;
             const redeemChk = document.getElementById('redeem-points-chk');
@@ -4143,8 +4094,6 @@
                 pointsRedeemed: pointsRedeemedVal
             };
 
-            
-            // Update hourly bucket for analytics charts
             try {
                 if (!salesData.hourlySales) salesData.hourlySales = { "8 AM": 0, "10 AM": 0, "12 PM": 0, "2 PM": 0, "4 PM": 0, "6 PM": 0, "8 PM": 0 };
                 const hr = new Date().getHours();
@@ -4165,7 +4114,6 @@
 
             cart = [];
             if (tenderedInput) tenderedInput.value = '';
-            // Refresh loyalty display if still applied
             if (activeLoyaltyMember) {
                 document.getElementById('pos-loyalty-display').innerText = `${activeLoyaltyMember.name} (${activeLoyaltyMember.points} pts)`;
                 document.getElementById('pos-available-points').innerText = activeLoyaltyMember.points;
@@ -4204,7 +4152,6 @@
                 `).join('');
             }
 
-            // Loyalty points on receipt
             const ptsRow = document.getElementById('receipt-points-redeemed-row');
             const ptsVal = document.getElementById('receipt-points-redeemed-val');
             const loyaltySec = document.getElementById('receipt-loyalty-section');
@@ -4242,7 +4189,6 @@
                 tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">No receipt history recorded yet.</td></tr>`;
                 return;
             }
-            // Unlimited — all ledger + archive combined for monitoring
             const active = salesData.ledger || [];
             const archived = salesData.archiveLedger || [];
             const allRecords = active.concat(archived);
@@ -4251,7 +4197,6 @@
                 const sum = (r.summary || '').toLowerCase();
                 return !query || inv.includes(query) || sum.includes(query);
             });
-            // Update header badge if present
             const badge = document.getElementById('receipt-history-count');
             if (badge) badge.innerText = filtered.length + ' / ' + allRecords.length + ' records · Unlimited';
 
@@ -4275,7 +4220,7 @@
 
         let lastScanValue = '';
         let lastScanTime = 0;
-        let scannerFormatMode = 'barcode'; // 'barcode' | 'qr' | 'both'
+        let scannerFormatMode = 'barcode'; 
 
         const SCAN_COOLDOWN_MS = 900;
 
@@ -4298,7 +4243,6 @@
                 else if (mode === 'both') st.innerText = 'Mode: Barcode + QR — tumatanggap ng pareho';
                 else st.innerText = 'Mode: Barcode — itutok ang barcode sa scanner box';
             }
-            // Restart camera with new formats if already open
             const modal = document.getElementById('camera-modal');
             if (modal && !modal.classList.contains('hidden') && html5QrCode) {
                 startScanner(currentFacingMode || 'environment');
@@ -4328,7 +4272,6 @@
                 modal.style.display = 'flex';
             }
             setScannerFormat(scannerFormatMode || 'barcode');
-            // slight delay so #reader is visible in DOM
             setTimeout(() => startScanner(currentFacingMode || 'environment'), 150);
         }
 
@@ -4336,13 +4279,11 @@
             const mode = scannerFormatMode || 'barcode';
             return {
                 fps: 20,
-                // Barcode = wide rectangle (pahiga); QR = square
                 qrbox: function(viewfinderWidth, viewfinderHeight) {
                     if (mode === 'qr') {
                         const side = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.65);
                         return { width: Math.max(160, side), height: Math.max(160, side) };
                     }
-                    // barcode or both → horizontal rectangle
                     const width = Math.floor(viewfinderWidth * 0.88);
                     const height = Math.floor(Math.min(viewfinderHeight * 0.28, width * 0.32));
                     return {
@@ -4360,7 +4301,6 @@
             try {
                 if (html5QrCode) {
                     const state = html5QrCode.getState && html5QrCode.getState();
-                    // 2 = SCANNING
                     if (state === 2 || (html5QrCode.isScanning)) {
                         await html5QrCode.stop();
                     }
@@ -4386,7 +4326,7 @@
 
             const config = getScannerConfig();
             const cameraConfig = (facingOrDeviceId && String(facingOrDeviceId).length > 20)
-                ? facingOrDeviceId  // deviceId
+                ? facingOrDeviceId 
                 : { facingMode: facingOrDeviceId || 'environment' };
 
             const onSuccess = (decodedText) => {
@@ -4402,13 +4342,11 @@
             try {
                 await html5QrCode.start(cameraConfig, config, onSuccess, () => {});
             } catch (err1) {
-                // Fallback: list cameras and pick back camera
                 try {
                     const cameras = await Html5Qrcode.getCameras();
                     if (cameras && cameras.length) {
                         const back = cameras.find(c => /back|rear|environment/i.test(c.label)) || cameras[cameras.length - 1];
                         await html5QrCode.start(back.id, config, onSuccess, () => {});
-                        // populate select if present
                         const sel = document.getElementById('camera-select');
                         if (sel) {
                             sel.innerHTML = cameras.map(c => `<option value="${c.id}">${c.label || c.id}</option>`).join('');
@@ -4502,7 +4440,6 @@
                 </tr>`;
             }).join('');
 
-            // Render visual barcodes after DOM is ready
             setTimeout(() => {
                 filtered.forEach(p => {
                     safeBarcode(`#inv-bc-${p.id}`, p.barcode, {
@@ -4658,7 +4595,6 @@
             const barcode = (document.getElementById('gen-barcode')?.value || '4800000000000').trim();
             const price = parseFloat(document.getElementById('gen-price')?.value) || 0;
 
-            // Shelf tag fields
             const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
             setTxt('shelf-preview-title', title);
             setTxt('shelf-preview-category', category.toUpperCase());
@@ -4749,7 +4685,7 @@
                     let grandTotal = 0;
                     tbody.innerHTML = lowItems.map(p => {
                         const qty = 50;
-                        const unitCost = +(p.price * 0.7).toFixed(2); // est. 70% of retail
+                        const unitCost = +(p.price * 0.7).toFixed(2); 
                         const line = qty * unitCost;
                         grandTotal += line;
                         return `<tr>
@@ -4788,7 +4724,6 @@
                 if (!Array.isArray(salesData.ledger)) salesData.ledger = [];
                 if (!Array.isArray(salesData.archiveLedger)) salesData.archiveLedger = [];
 
-                // Recompute KPIs from ledger if totals are zero but ledger has data
                 if ((salesData.totalRevenue || 0) === 0 && salesData.ledger.length > 0) {
                     salesData.totalRevenue = salesData.ledger.reduce((s, r) => s + (r.total || 0), 0);
                     salesData.transactions = salesData.ledger.length;
@@ -4806,7 +4741,6 @@
                 setTxt('kpi-items-sold', String(items));
                 setTxt('kpi-avg-basket', '₱' + avg.toFixed(2));
 
-                // Category summary list
                 const catList = document.getElementById('category-totals-list');
                 if (catList) {
                     const cats = salesData.categoryTotals || {};
@@ -4828,7 +4762,6 @@
                     }
                 }
 
-                // Analytics history table
                 const histBody = document.getElementById('sales-analytic-history-body');
                 const ledger = salesData.ledger || [];
                 const countEl = document.getElementById('analytics-history-count');
@@ -4837,7 +4770,6 @@
                     if (!ledger.length) {
                         histBody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400 font-medium">No active sales history recorded yet.</td></tr>';
                     } else {
-                        // Render ALL records — no slice/limit
                         histBody.innerHTML = ledger.map(r => `
                             <tr class="hover:bg-slate-50 border-b border-slate-100">
                                 <td class="p-3 font-mono font-bold text-puregold-darkgreen">${r.inv}</td>
@@ -4851,11 +4783,9 @@
                     }
                 }
 
-                // Archive badge
                 const archBadge = document.getElementById('archive-count-badge');
                 if (archBadge) archBadge.innerText = String((salesData.archiveLedger || []).length);
 
-                // Charts (Chart.js)
                 if (typeof Chart === 'undefined') {
                     console.warn('Chart.js not loaded');
                     return;
@@ -4863,7 +4793,6 @@
 
                 const hourlyLabels = Object.keys(salesData.hourlySales);
                 const hourlyValues = hourlyLabels.map(k => salesData.hourlySales[k] || 0);
-                // If all zero, derive rough distribution from ledger timestamps
                 if (hourlyValues.every(v => v === 0) && (salesData.ledger || []).length) {
                     salesData.ledger.forEach(r => {
                         try {
@@ -4948,7 +4877,6 @@
         function clearAnalyticsLog() {
             if (!confirm('Archive current sales history and reset active analytics metrics?')) return;
             if (!salesData.archiveLedger) salesData.archiveLedger = [];
-            // Move ledger to archive
             (salesData.ledger || []).forEach(r => salesData.archiveLedger.unshift(r));
             salesData.ledger = [];
             salesData.totalRevenue = 0;
@@ -5094,7 +5022,6 @@
             setTxt('print-card-phone-back', m.phone || 'N/A');
             setTxt('print-barcode-text', m.id);
 
-            // Purchase history for this member
             const histBody = document.getElementById('member-history-table-body');
             if (histBody) {
                 const memberTx = (salesData.ledger || []).filter(r => r.loyaltyId === m.id);
@@ -5169,9 +5096,7 @@
         function openLoyaltyModal() {
             document.getElementById('loyalty-card-input').value = '';
             document.getElementById('loyalty-modal').classList.remove('hidden');
-            // Sync format toggle UI (no camera restart yet — container still hidden)
             setLoyaltyScannerFormat(loyaltyScannerFormatMode || 'both');
-            // Auto-open camera for fast scan-driven POS flow
             const container = document.getElementById('loyalty-reader-container');
             const toggleBtn = document.getElementById('loyalty-cam-toggle-btn');
             if (container) {
@@ -5186,7 +5111,6 @@
             document.getElementById('loyalty-modal').classList.add('hidden');
         }
 
-        // ===================== LOYALTY CARD CAMERA SCANNER (html5-qrcode) =====================
         let loyaltyHtml5QrCode = null;
         let loyaltyScannerFormatMode = 'both';
 
@@ -5204,7 +5128,6 @@
             if (status) status.innerText = loyaltyScannerFormatMode === 'qr'
                 ? 'Mode: QR Code — itutok ang QR sa scan box'
                 : 'Mode: Barcode — itutok ang Perks Card barcode sa scan box';
-            // Restart camera if currently open
             const container = document.getElementById('loyalty-reader-container');
             if (container && !container.classList.contains('hidden')) {
                 stopLoyaltyCameraScanner();
@@ -5266,7 +5189,6 @@
                         const side = Math.floor(Math.min(w, h) * 0.65);
                         return { width: Math.max(140, side), height: Math.max(140, side) };
                     }
-                    // barcode / both → wide rectangle (pahiga)
                     const width = Math.floor(w * 0.90);
                     const height = Math.floor(Math.min(h * 0.30, width * 0.30));
                     return {
@@ -5291,7 +5213,6 @@
                 onLoyaltyScan,
                 (err) => {}
             ).catch(err => {
-                // Fallback: front camera
                 loyaltyHtml5QrCode.start(
                     { facingMode: "user" },
                     config,
@@ -5332,7 +5253,6 @@
             document.getElementById('pos-available-points').innerText = member.points;
             document.getElementById('redeem-points-container').classList.remove('hidden');
             document.getElementById('redeem-points-container').classList.add('flex');
-            // Auto-select Perks Club 5% discount
             const disc = document.getElementById('cart-discount');
             if (disc && disc.value === '0') disc.value = '0.05';
             updateCartTotals();
@@ -5363,12 +5283,9 @@
             alert("Added ₱500 cash-in.");
         }
 
-
-        // ===================== INVENTORY STAFF & ACTIVITY =====================
         function logInventoryActivity(action, detail, productName) {
             const actor = (currentEmployee && currentEmployee.name) ? currentEmployee.name : 'System';
             const actorId = (currentEmployee && currentEmployee.id) ? currentEmployee.id : 'SYS';
-            // Prefer selected inv staff if admin is logging on behalf - else current user
             const staffId = currentlySelectedInvStaffId || actorId;
             const staff = inventoryStaffList.find(s => s.id === staffId);
             inventoryActivityLog.unshift({
@@ -5538,5 +5455,75 @@
         }
 
     </script>
+
+    <!-- FIXED FIREBASE MODULE SCRIPT -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+      import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
+      import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBqivyHkphmpuNEszNdzyULdYFJEwCCsoo", // <--- PALITAN ITO NG TOTOONG API KEY MO
+        authDomain: "todomaxtipid-gold.firebaseapp.com",
+        projectId: "todomaxtipid-gold",
+        storageBucket: "todomaxtipid-gold.firebasestorage.app",
+        messagingSenderId: "222630802701",
+        appId: "1:222630802701:web:53d354a8133823c6932c44",
+        measurementId: "G-7PEDR1CJ87"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      window.db = db;
+
+      const dataKeys = [
+        "todamax_sales_data",
+        "todamax_loyalty_members",
+        "todamax_products_list",
+        "todamax_cashier_staff",
+        "todamax_admin_profile",
+        "todamax_inv_staff",
+        "todamax_inv_activity"
+      ];
+
+      let syncQueue = Promise.resolve();
+
+      window.syncTodamaxDataToCloud = function () {
+        syncQueue = syncQueue
+          .catch(() => {})
+          .then(async () => {
+            for (const key of dataKeys) {
+              const raw = localStorage.getItem(key);
+              if (raw === null) continue;
+
+              try {
+                const value = JSON.parse(raw);
+                await setDoc(doc(db, "todomax_data", key), {
+                  value,
+                  updatedAt: serverTimestamp()
+                });
+                console.log(`✅ Successfully saved to Firebase: ${key}`);
+              } catch (err) {
+                console.error(`❌ Failed to save ${key} to Firebase:`, err);
+              }
+            }
+            console.log("Todamax cloud sync completed.");
+          });
+
+        return syncQueue.catch(error => {
+          console.error("Todamax cloud sync failed:", error);
+        });
+      };
+
+      isSupported()
+        .then(supported => {
+          if (supported) getAnalytics(app);
+        })
+        .catch(console.warn);
+
+      console.log("Firebase initialized:", app.options.projectId);
+    </script>
+
 </body>
 </html>
